@@ -1,0 +1,16 @@
+bme680==1.0.5
+certifi==2018.8.24
+chardet==3.0.4
+colour==0.1.5
+Cython==0.28.5
+docutils==0.14
+idna==2.7
+Kivy==1.11.0.dev0
+Kivy-Garden==0.1.4
+pygame==1.9.4
+Pygments==2.2.0
+python-yr==1.4.5
+requests==2.19.1
+RPi.GPIO==0.6.3
+urllib3==1.23
+xmltodict==0.11.0

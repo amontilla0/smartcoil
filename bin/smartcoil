@@ -1,0 +1,6 @@
+#! /usr/bin/env python3
+
+from smartcoil.SmartCoil import sc
+
+if __name__ == '__main__':
+    sc.run()
