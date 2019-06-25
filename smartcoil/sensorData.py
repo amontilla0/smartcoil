@@ -2,7 +2,7 @@ import bme680
 import time
 
 class SensorData:
-    def __init__(self):
+    def __init__(self, burn_time = 300):
         try:
             self.sensor = bme680.BME680(bme680.I2C_ADDR_PRIMARY)
         except IOError:
@@ -33,7 +33,7 @@ class SensorData:
         # for building up gas resistance baseline
         self.start_time = time.time()
         self.curr_time = time.time()
-        self.burn_in_time = 300
+        self.burn_in_time = burn_time
         self.burn_in_data = []
         self.gas_baseline = None
         self.burn_complete = False
