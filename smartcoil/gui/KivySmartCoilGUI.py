@@ -1,4 +1,4 @@
-#from kivy.core.window import Window
+import os
 from functools import wraps
 
 from kivy.app import App
@@ -103,11 +103,13 @@ class CircularSlider(Slider):
 
 class GUIWidget(BoxLayout):
     LEFT_PADDING = NumericProperty(15)
-    c_sldr = ObjectProperty(None)
 
     def __init__(self, **kwargs):
         super(GUIWidget, self).__init__(**kwargs)
         self.orientation = 'vertical'
+        self.ids.logo.source = os.path.join(os.path.dirname(__file__), '../../assets/icons/smartcoil-logo.png')
+        self.ids.h_icon.source = os.path.join(os.path.dirname(__file__), '../../assets/icons/humidity_icon.png')
+        self.ids.a_icon.source = os.path.join(os.path.dirname(__file__), '../../assets/icons/wave_icon.png')
 
     def on_touch_down(self, touch):
         if not self.collide_point(*touch.pos):
@@ -121,15 +123,33 @@ class GUIWidget(BoxLayout):
 
         super(GUIWidget, self).on_touch_move(touch)
 
+    def updateCurrentTemp(self, tmp):
+        self.c_sldr.ids.curr_tmpture_txt.text = 'currently {}'.format(tmp)
+
     def updateHumidity(self, hum):
-        c_sldr.curr_tmpture_txt.text = 'currently {}'.format(hum)
+        self.h_lab.text = '{}%'.format(hum)
 
     def updateAirQuality(self, aq):
-        pass
+        self.a_lab.text = '{}%'.format(aq)
+
+    def updateTodayTemp(self, tmp):
+        self.tod_tmp.text = '{}'.format(tmp)
+
+    def updateTodayIcon(self, src):
+        self.tod_icon.source = src
+
+    def get_user_temp(self):
+        return int(self.c_sldr.ids.tmpture_txt.text)
 
     def btn1_on_press(self):
-        print('pressing button..')
-        self.updateHumidity('69 °F')
+        print('pressing button..!')
+        self.export_to_png('prueba.png')
+        # self.updateCurrentTemp('69 gF')
+        # self.updateHumidity(69)
+        # self.updateAirQuality(22)
+        # self.updateTodayTemp('69 gF')
+        # self.updateTodayIcon('https://api.met.no/weatherapi/weathericon/1.1?content_type=image%2Fpng&is_night=0&symbol=3')
+
 
 class SmartCoilGUIApp(App):
     def build(self):

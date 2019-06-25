@@ -1,5 +1,3 @@
-#:import Window kivy.core.window.Window
-
 # Icons made by https://www.freepik.com/ from https://www.flaticon.com/. www.flaticon.com, licensed by CC 3.0 BY (http://creativecommons.org/licenses/by/3.0/)
 
 <Icon@Image>:
@@ -13,7 +11,7 @@
     height: 45
     allow_stretch: True
 
-<-CircularSlider@Slider>:
+<-CircularSlider>:
     tmpture_txt: tmpture_txt
     id: circ_slider
     # making the slider take more space than half the screen
@@ -81,6 +79,10 @@
 
 <GUIWidget>:
     c_sldr: c_sldr
+    h_lab: h_lab
+    a_lab: a_lab
+    tod_tmp: tod_tmp
+    tod_icon: tod_icon
 
     spacing: 25
     padding: [self.LEFT_PADDING, 20, 15, 0]
@@ -93,7 +95,7 @@
             size: self.size
 
     Image:
-        source: 'smartcoil-logo3.png'
+        id: logo
         size_hint: None, None
         width: 500
         allow_stretch: True
@@ -151,7 +153,6 @@
                         id: h_icon
                         x: -3
                         y: h_lab.center_y - self.height / 2
-                        source: 'humidity_icon.png'
                     Label:
                         id: h_lab
                         # right align
@@ -168,7 +169,6 @@
                         id: a_icon
                         x: -3
                         y: h_lab.center_y - self.height / 2
-                        source: 'wave_icon.png'
                     Label:
                         id: a_lab
                         # right align
@@ -193,6 +193,7 @@
                         font_size: tod_lbl.font_size
                         text: '60 °F'
                     AsyncIcon:
+                        id: tod_icon
                         # places the icon after the two labels
                         x: tod_lbl.texture_size[0] + tod_tmp.texture_size[0] + 1
                         y: tod_lbl.center_y - self.height / 1.65
