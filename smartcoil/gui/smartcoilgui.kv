@@ -118,27 +118,34 @@
                 size_hint: .9, .2
                 pos_hint: {'center_x':.55 }
                 spacing: 5
-                Button:
-                    id: btn1
+                ToggleButton:
+                    id: lo_button
+                    group: 'fan_speed'
                     font_size: 20
-                    text: "LO"
-                    on_press: root.btn1_on_press()
-                Button:
-                    id: btn2
+                    text: 'LO'
+                    on_press: root.fancoil_on_lo()
+                ToggleButton:
+                    id: mi_button
+                    group: 'fan_speed'
                     font_size: 20
-                    text: "MI"
-                    on_press: root.btn1_on_press()
-                Button:
-                    id: btn3
+                    text: 'MI'
+                    on_press: root.fancoil_on_mi()
+                ToggleButton:
+                    id: hi_button
+                    group: 'fan_speed'
                     font_size: 20
-                    text: "HI"
-                    on_press: root.btn1_on_press()
-                Button:
-                    id: btn4
+                    text: 'HI'
+                    on_press: root.fancoil_on_hi()
+                ToggleButton:
+                    id: off_button
+                    group: 'fan_speed'
                     font_size: 20
-                    background_color: (1.0, 0.3, 0.3, 1.0)
-                    text: "OFF"
-                    on_press: root.btn1_on_press()
+                    background_normal: ''
+                    background_color: (0.812, 0.145, 0.145, 1.0)
+                    background_down: ''
+                    text: 'OFF'
+                    on_press: root.fancoil_off()
+                    on_state: self.background_color = (1.0, 0.0, 0.0, 1.0) if self.state == 'down' else (0.812, 0.145, 0.145, 1.0); self.font_size = 20 + 6 * (self.state == 'down'); self.bold = self.state == 'down'
 
             BoxLayout:
                 orientation: 'vertical'

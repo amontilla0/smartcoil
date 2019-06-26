@@ -104,12 +104,13 @@ class CircularSlider(Slider):
 class GUIWidget(BoxLayout):
     LEFT_PADDING = NumericProperty(15)
 
-    def __init__(self, **kwargs):
+    def __init__(self, rc, **kwargs):
         super(GUIWidget, self).__init__(**kwargs)
         self.orientation = 'vertical'
         self.ids.logo.source = os.path.join(os.path.dirname(__file__), '../../assets/icons/smartcoil-logo.png')
         self.ids.h_icon.source = os.path.join(os.path.dirname(__file__), '../../assets/icons/humidity_icon.png')
         self.ids.a_icon.source = os.path.join(os.path.dirname(__file__), '../../assets/icons/wave_icon.png')
+        self.rc = rc
 
     def on_touch_down(self, touch):
         if not self.collide_point(*touch.pos):
@@ -141,19 +142,26 @@ class GUIWidget(BoxLayout):
     def get_user_temp(self):
         return int(self.c_sldr.ids.tmpture_txt.text)
 
-    def btn1_on_press(self):
-        print('pressing button..!')
-        self.export_to_png('prueba.png')
-        # self.updateCurrentTemp('69 gF')
-        # self.updateHumidity(69)
-        # self.updateAirQuality(22)
-        # self.updateTodayTemp('69 gF')
-        # self.updateTodayIcon('https://api.met.no/weatherapi/weathericon/1.1?content_type=image%2Fpng&is_night=0&symbol=3')
+    def fancoil_on_lo(self):
+        self.rc.start_coil_at(0)
+
+    def fancoil_on_mi(self):
+        self.rc.start_coil_at(1)
+
+    def fancoil_on_hi(self):
+        self.rc.start_coil_at(2)
+
+    def fancoil_off(self):
+        self.rc.all_off()
 
 
 class SmartCoilGUIApp(App):
+    def __init__(self, rc):
+        super(SmartCoilGUIApp, self).__init__()
+        self.rc = rc
+
     def build(self):
-        return GUIWidget()
+        return GUIWidget(self.rc)
 
 if __name__ == "__main__":
     SmartCoilGUIApp().run()
