@@ -9,18 +9,14 @@ from kivy.uix.button import Button
 from kivy.uix.boxlayout import BoxLayout
 from kivy.uix.slider import Slider
 from kivy.core.window import Window
-from kivy.graphics import Color, Ellipse, Line
+from kivy.graphics import Ellipse, Line
 from pygame.mouse import set_cursor
 from kivy.uix.widget import Widget
 from kivy.properties import ObjectProperty, NumericProperty, ListProperty
-from kivy.clock import Clock
 from kivy.animation import Animation
 
 from time import time
 from math import cos, sin, pi, sqrt
-
-from colour import Color
-import colorsys
 
 class CircularSlider(Slider):
     circ_slider = ObjectProperty(None)
@@ -42,19 +38,8 @@ class CircularSlider(Slider):
     handle_col2 = ListProperty([0.99765, 0.33333, 0, 0])
     halo_col2 = ListProperty([0.99765, 0.33333, 0, 0])
 
-    cold_color = ObjectProperty(Color(rgb=(0,.44, .96)))
-#    hot_color  = ObjectProperty(Color(rgb=(.91765, .53333, 0)))
-    hot_color  = ObjectProperty(Color(rgb=(.99765, .33333, 0)))
-
-    color_map = ListProperty([])
-
-    def __init__(self, **kwargs):
-        Clock.schedule_once(self.post_init, 0)
-
-        super(CircularSlider, self).__init__(**kwargs)
-
-    def post_init(self, dt):
-        self.color_map = list(self.cold_color.range_to(self.hot_color, self.max - self.min))
+    cold_color = ListProperty([0,.44, .96])
+    hot_color  = ListProperty([.99765, .33333, 0])
 
     def linear_coords(self, base_x, handle_size):
         radius = ((min(self.size[0], self.size[1]) - self.thickness / 2) /2)
@@ -79,11 +64,11 @@ class CircularSlider(Slider):
         cc = self.cold_color
         hc = self.hot_color
 
-        self.handle_col = (cc.red, cc.green, cc.blue, 1 - vn)
-        self.halo_col = (cc.red, cc.green, cc.blue, (1 - vn) * 0.3)
+        self.handle_col = (cc[0], cc[1], cc[2], 1 - vn)
+        self.halo_col = (cc[0], cc[1], cc[2], (1 - vn) * 0.3)
 
-        self.handle_col2 = (hc.red, hc.green, hc.blue, vn)
-        self.halo_col2 = (hc.red, hc.green, hc.blue, vn * 0.3)
+        self.handle_col2 = (hc[0], hc[1], hc[2], vn)
+        self.halo_col2 = (hc[0], hc[1], hc[2], vn * 0.3)
 
     def on_touch_move(self, touch):
         sup = super(CircularSlider, self).on_touch_move(touch)
@@ -111,6 +96,7 @@ class GUIWidget(BoxLayout):
         self.ids.h_icon.source = os.path.join(os.path.dirname(__file__), '../../assets/icons/humidity_icon.png')
         self.ids.a_icon.source = os.path.join(os.path.dirname(__file__), '../../assets/icons/wave_icon.png')
         self.rc = rc
+        self.speed = 1
 
     def on_touch_down(self, touch):
         if not self.collide_point(*touch.pos):
@@ -142,17 +128,27 @@ class GUIWidget(BoxLayout):
     def get_user_temp(self):
         return int(self.c_sldr.ids.tmpture_txt.text)
 
+    def user_turned_off_fancoil(self):
+        return self.speed == 0
+
+    def get_user_speed(self):
+        return self.speed
+
     def fancoil_on_lo(self):
-        self.rc.start_coil_at(0)
+        self.speed = 1
+        self.rc.start_coil_at(self.speed)
 
     def fancoil_on_mi(self):
-        self.rc.start_coil_at(1)
+        self.speed = 2
+        self.rc.start_coil_at(self.speed)
 
     def fancoil_on_hi(self):
-        self.rc.start_coil_at(2)
+        self.speed = 3
+        self.rc.start_coil_at(self.speed)
 
     def fancoil_off(self):
-        self.rc.all_off()
+        self.speed = 0
+        self.rc.start_coil_at(self.speed)
 
 
 class SmartCoilGUIApp(App):

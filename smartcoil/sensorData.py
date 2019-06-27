@@ -104,8 +104,10 @@ class SensorData:
 
         return [temp, pres, humi, gas_res, airq]
 
-    def run_sensor(self, verbose = False):
-        while True:
+    def run_sensor(self, verbose = False, exit_evt = None):
+        sleep_func = time.sleep if exit_evt == None else exit_evt.wait
+
+        while True if exit_evt == None else not exit_evt.is_set():
             if self.sensor.get_sensor_data():
                 self.build_gas_baseline()
                 if not verbose: continue
@@ -122,7 +124,7 @@ class SensorData:
 
                 print(output)
 
-            time.sleep(1)
+            sleep_func(1)
 
 if __name__=='__main__':
     sd = SensorData()

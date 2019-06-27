@@ -3,7 +3,8 @@ from .sensorData import SensorData
 from .relayController import RelayController
 from .gui.KivySmartCoilGUI import SmartCoilGUIApp
 from time import sleep
-from threading import Thread
+from threading import Thread, Event
+import signal
 import sqlite3
 from datetime import datetime
 import os
@@ -16,9 +17,10 @@ class SmartCoil():
         self.wthr = WeatherData()
         self.snsr = SensorData(1)
         self.rc = RelayController()
-        self.gui  = SmartCoilGUIApp()
+        self.gui  = SmartCoilGUIApp(self.rc)
         dirname = os.path.dirname(__file__)
         self.dbase_path = os.path.join(dirname, '../assets/db/SmartCoilDB')
+        self.exit = Event()
 
         # Since the fancoil ability to blow cool or hot air comes from a central boiler room,
         # all we could do is predict the fan will blow cold air between march and september,
@@ -26,7 +28,7 @@ class SmartCoil():
         self.mode = COOLING if datetime.now().month in range(4,10) else HEATING
 
     def run_sensor(self, verbose = False):
-        self.snsr.run_sensor(verbose)
+        self.snsr.run_sensor(verbose, self.exit)
 
     def run_sensor_thread(self):
         th = Thread(target=self.run_sensor, name='sensorRun')
@@ -70,16 +72,21 @@ class SmartCoil():
         ,int(a)
         )
 
-    def monitor_temperature(self, speed = 1, offset = 0):
+    def monitor_temperature(self, offset = 0):
         mult  = 1 if self.mode == COOLING else -1
         trigger_fancoil = mult * self.get_current_temp() - mult * self.gui.root.get_user_temp() >= -abs(offset)
 
-        if trigger_fancoil:
-            self.rc.start_coil_at(speed)
+        if not self.gui.root.user_turned_off_fancoil() and trigger_fancoil:
+            self.rc.start_coil_at(self.gui.root.get_user_speed())
         else:
             if self.rc.fancoil_is_on():
                 self.rc.all_off()
 
+    def quit(self, signo, _frame):
+        print('cleaning up before exiting app...')
+        self.exit.set()
+        self.rc.cleanup()
+        exit(0)
 
     def periodic_data_log(self):
         waitTime = 5
@@ -88,10 +95,10 @@ class SmartCoil():
         weatherUpdated = False
         iter = 0
 
-        while True:
+        while not self.exit.is_set():
             # data will be stored into sqlite only if the sensor is fully primed (it takes 5 minutes of initialization to get consistent air quality data).
             if self.sensor_ready():
-                self.monitor_temperature(speed = 2, offset = 3)
+                self.monitor_temperature(offset = 3)
 
                 tmp, hum, airq = self.get_screen_data()
                 self.gui.root.updateCurrentTemp(tmp)
@@ -116,19 +123,20 @@ class SmartCoil():
                 self.gui.root.updateCurrentTemp('.'*(iter%3+1))
                 iter += 1
 
-            sleep(waitTime)
+            self.exit.wait(waitTime)
 
     def periodic_data_log_thread(self):
         th = Thread(target=self.periodic_data_log, name='dataLog')
         th.start()
 
     def run(self):
-        try:
-            # spawn thread in charge of keeping BME680 sensor periodically burning for the gas readings.
-            self.run_sensor_thread()
-            # spawn thread in charge of reading sensor+weather data and writing it to sqlite.
-            self.periodic_data_log_thread()
+        # handling CTRL-C internally to stop all related threads and cleanup before exiting
+        for sig in ('TERM', 'HUP', 'INT'):
+            signal.signal(getattr(signal, 'SIG'+sig), self.quit)
 
-            self.run_gui()
-        except KeyboardInterrupt:
-            self.rc.cleanup()
+        # spawn thread in charge of keeping BME680 sensor periodically burning for the gas readings.
+        self.run_sensor_thread()
+        # spawn thread in charge of reading sensor+weather data and writing it to sqlite.
+        self.periodic_data_log_thread()
+
+        self.run_gui()

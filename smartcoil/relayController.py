@@ -20,7 +20,7 @@ class RelayController():
     def __init__(self):
         self.relays = [17,22,23,27]
         self.RELAYS_COUNT = len(self.relays)
-        self.init()
+        self.init() 
 
     # Sets the value for a given relay.
     # rel - the desired relay to control, values go from 0 to 3.
@@ -28,11 +28,14 @@ class RelayController():
     def set_relay_to(self, rel, value):
         GPIO.output(self.relays[rel],value)
 
+    # Turns the fancoil on or off.
+    # speed goes from 1 to 3. 0 means turned off.
     def start_coil_at(self, speed):
-        options = [fanlo, fanmi, fanhi]
+        options = [0, fanlo, fanmi, fanhi]
         self.all_off()
-        self.set_relay_to(valve, VAL_ON)
-        self.set_relay_to(options[speed], VAL_ON)
+        if speed > 0:
+            self.set_relay_to(valve, VAL_ON)
+            self.set_relay_to(options[speed], VAL_ON)
 
     def fancoil_is_on(self):
         return GPIO.input(self.relays[valve]) == VAL_ON
