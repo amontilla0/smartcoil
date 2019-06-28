@@ -1,9 +1,11 @@
 import bme680
 import time
+from can import Message
 
 class SensorData:
-    def __init__(self, burn_time = 300):
+    def __init__(self, bus, burn_time = 300):
         try:
+            self.bus = bus
             self.sensor = bme680.BME680(bme680.I2C_ADDR_PRIMARY)
         except IOError:
             self.sensor = bme680.BME680(bme680.I2C_ADDR_SECONDARY)
@@ -108,6 +110,7 @@ class SensorData:
         sleep_func = time.sleep if exit_evt == None else exit_evt.wait
 
         while True if exit_evt == None else not exit_evt.is_set():
+            self.bus.send(Message(data=b'sensor tick..'))
             if self.sensor.get_sensor_data():
                 self.build_gas_baseline()
                 if not verbose: continue

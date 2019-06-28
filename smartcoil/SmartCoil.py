@@ -4,6 +4,8 @@ from .relayController import RelayController
 from .gui.KivySmartCoilGUI import SmartCoilGUIApp
 from time import sleep
 from threading import Thread, Event
+import asyncio
+import can
 import signal
 import sqlite3
 from datetime import datetime
@@ -14,8 +16,15 @@ COOLING = 2
 
 class SmartCoil():
     def __init__(self):
+        # preparation of bus that will receive async messages.
+        self.msg_bus = can.Bus('bus1', bustype='virtual', receive_own_messages=True)
+        self.loop = asyncio.get_event_loop()
+        self.reader = can.AsyncBufferedReader()
+        listeners = [ self.print_message, self.reader ]
+        self.notifier = can.Notifier(self.msg_bus, listeners, loop=self.loop)
+
         self.wthr = WeatherData()
-        self.snsr = SensorData(1)
+        self.snsr = SensorData(self.msg_bus, 1)
         self.rc = RelayController()
         self.gui  = SmartCoilGUIApp(self.rc)
         dirname = os.path.dirname(__file__)
@@ -29,6 +38,10 @@ class SmartCoil():
 
         # Flag ot check if target temperature was reached.
         self.target_reached = False
+
+    def print_message(self, msg):
+        print('incoming message:', msg.data.decode('utf-8'))
+        print('-'*20)
 
     def run_sensor(self, verbose = False):
         self.snsr.run_sensor(verbose, self.exit)
@@ -103,6 +116,9 @@ class SmartCoil():
         print('cleaning up before exiting app...')
         self.exit.set()
         self.rc.cleanup()
+        self.notifier.stop()
+        self.msg_bus.shutdown()
+        self.loop.close()
         exit(0)
 
     def periodic_data_log(self):
@@ -146,6 +162,10 @@ class SmartCoil():
         th = Thread(target=self.periodic_data_log, name='dataLog')
         th.start()
 
+    async def await_messages(self):
+        while True:
+            msg = await self.reader.get_message()
+
     def run(self):
         # handling CTRL-C internally to stop all related threads and cleanup before exiting
         for sig in ('TERM', 'HUP', 'INT'):
@@ -153,6 +173,10 @@ class SmartCoil():
 
         # spawn thread in charge of keeping BME680 sensor periodically burning for the gas readings.
         self.run_sensor_thread()
+
+        # awaiting for messages from other threads.
+        self.loop.run_until_complete(self.await_messages())
+
         # spawn thread in charge of reading sensor+weather data and writing it to sqlite.
         self.periodic_data_log_thread()
 
