@@ -95,6 +95,7 @@ class GUIWidget(BoxLayout):
         self.ids.logo.source = os.path.join(os.path.dirname(__file__), '../../assets/icons/smartcoil-logo.png')
         self.ids.h_icon.source = os.path.join(os.path.dirname(__file__), '../../assets/icons/humidity_icon.png')
         self.ids.a_icon.source = os.path.join(os.path.dirname(__file__), '../../assets/icons/wave_icon.png')
+        self.ids.c_sldr.set_color()
         self.rc = rc
         self.speed = 1
 

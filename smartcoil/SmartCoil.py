@@ -27,6 +27,9 @@ class SmartCoil():
         # and cold air in the remaining months.
         self.mode = COOLING if datetime.now().month in range(4,10) else HEATING
 
+        # Flag ot check if target temperature was reached.
+        self.target_reached = False
+
     def run_sensor(self, verbose = False):
         self.snsr.run_sensor(verbose, self.exit)
 
@@ -54,6 +57,13 @@ class SmartCoil():
         sql = "INSERT INTO SENSOR_BME680_DATA VALUES (?, ?, ?, ?, ?, ?)"
         self.commit_to_db(sql, data)
 
+    def commit_user_data(self, tstamp):
+        u_temp = self.gui.root.get_user_temp()
+        u_speed = self.gui.root.get_user_temp()
+        data = [tstamp, u_temp, u_speed]
+        sql = "INSERT INTO USER_DATA VALUES (?, ?, ?)"
+        self.commit_to_db(sql, data)
+
     def sensor_ready(self):
         return self.snsr.sensor_ready()
 
@@ -73,13 +83,20 @@ class SmartCoil():
         )
 
     def monitor_temperature(self, offset = 0):
+        # there's an initial offset to reach the target temperature plus some additional degrees.
+        # However, once this target is reached, the offset is set to zero in order to wait some time
+        # until the room temperature is out of the initial target again (disregarding the offset).
+        dynamic_offset = 0 if self.target_reached else offset
+
         mult  = 1 if self.mode == COOLING else -1
-        trigger_fancoil = mult * self.get_current_temp() - mult * self.gui.root.get_user_temp() >= -abs(offset)
+        trigger_fancoil = mult * self.get_current_temp() - mult * self.gui.root.get_user_temp() > -abs(dynamic_offset)
 
         if not self.gui.root.user_turned_off_fancoil() and trigger_fancoil:
+            self.target_reached = False
             self.rc.start_coil_at(self.gui.root.get_user_speed())
         else:
             if self.rc.fancoil_is_on():
+                self.target_reached = True
                 self.rc.all_off()
 
     def quit(self, signo, _frame):

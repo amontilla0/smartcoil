@@ -70,7 +70,7 @@
     Label:
         id: curr_tmpture_txt
         size: self.texture_size
-        text: 'currently 48 °F'
+        text: 'currently .. °F'
         #pos: (root.center_x - self.texture_size[0] / 2, root.center_y - self.texture_size[1] / 2 - min(root.size[0], root.size[1]) / 3.5)
         pos: (root.center_x - 5 - self.texture_size[0] / 2, root.center_y - self.texture_size[1] / 2 - 95)
         font_size: 35
@@ -109,7 +109,8 @@
             padding: 0
             min: 40
             max: 90
-            preset: 70
+            # initial temperature in Farenheit
+            value: 75
 
         BoxLayout:
             orientation: 'vertical'
