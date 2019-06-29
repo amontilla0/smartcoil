@@ -20,7 +20,7 @@ class SmartCoil():
         self.msg_bus = can.Bus('bus1', bustype='virtual', receive_own_messages=True)
         self.loop = asyncio.get_event_loop()
         self.reader = can.AsyncBufferedReader()
-        listeners = [ self.print_message, self.reader ]
+        listeners = [ self.reader ]
         self.notifier = can.Notifier(self.msg_bus, listeners, loop=self.loop)
 
         self.wthr = WeatherData()
@@ -38,10 +38,6 @@ class SmartCoil():
 
         # Flag ot check if target temperature was reached.
         self.target_reached = False
-
-    def print_message(self, msg):
-        print('incoming message:', msg.data.decode('utf-8'))
-        print('-'*20)
 
     def run_sensor(self, verbose = False):
         self.snsr.run_sensor(verbose, self.exit)
@@ -80,17 +76,14 @@ class SmartCoil():
     def sensor_ready(self):
         return self.snsr.sensor_ready()
 
-    def c_to_f(self, celcius):
-        return celcius * 9 / 5 + 32
-
     def get_current_temp(self):
         t, *_ = self.snsr.get_most_recent_readings()
-        return self.c_to_f(t)
+        return self.snsr.c_to_f(t)
 
     def get_screen_data(self):
         t, p, h, g, a = self.snsr.get_most_recent_readings()
         return (
-        '{} °F'.format(int(self.c_to_f(t)))
+        '{} °F'.format(int(self.snsr.c_to_f(t)))
         ,int(h)
         ,int(a)
         )
@@ -118,7 +111,6 @@ class SmartCoil():
         self.rc.cleanup()
         self.notifier.stop()
         self.msg_bus.shutdown()
-        self.loop.close()
         exit(0)
 
     def periodic_data_log(self):
@@ -163,8 +155,22 @@ class SmartCoil():
         th.start()
 
     async def await_messages(self):
+        switcher = {
+                    'SNSTCK': lambda: self.monitor_temperature(offset = 3),
+                    'WTHTCK': lambda: print('got a weather tick..'),
+                    'GUIMSG': lambda: print('got a gui message..'),
+        }
+
         while True:
             msg = await self.reader.get_message()
+            option = msg.data.decode('utf-8')
+            action = switcher.get(option, lambda: print('unrecognized message.'))
+
+            action()
+
+    def run_gui_thread(self):
+        th = Thread(target=self.run_gui, name='GUI')
+        th.start()
 
     def run(self):
         # handling CTRL-C internally to stop all related threads and cleanup before exiting
@@ -174,8 +180,9 @@ class SmartCoil():
         # spawn thread in charge of keeping BME680 sensor periodically burning for the gas readings.
         self.run_sensor_thread()
 
-        # awaiting for messages from other threads.
-        self.loop.run_until_complete(self.await_messages())
+        # # awaiting for messages from other threads.
+        # self.loop.run_until_complete(self.await_messages())
+        # self.loop.close()
 
         # spawn thread in charge of reading sensor+weather data and writing it to sqlite.
         self.periodic_data_log_thread()

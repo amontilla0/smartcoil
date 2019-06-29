@@ -3,10 +3,11 @@ import time
 from can import Message
 
 class SensorData:
-    def __init__(self, bus, burn_time = 300):
+    def __init__(self, bus = None, burn_time = 300):
         try:
             self.bus = bus
             self.sensor = bme680.BME680(bme680.I2C_ADDR_PRIMARY)
+             #3.32
         except IOError:
             self.sensor = bme680.BME680(bme680.I2C_ADDR_SECONDARY)
 
@@ -106,26 +107,61 @@ class SensorData:
 
         return [temp, pres, humi, gas_res, airq]
 
-    def run_sensor(self, verbose = False, exit_evt = None):
+    def c_to_f(self, celcius):
+        return celcius * 9 / 5 + 32
+
+    def run_sensor(self, verbose = False, exit_evt = None, temp_in_f = True):
         sleep_func = time.sleep if exit_evt == None else exit_evt.wait
 
+        temp = self.sensor.data.temperature
+        if temp_in_f:
+            temp = self.c_to_f(temp)
+        temp = int(temp)
+        pres = int(self.sensor.data.pressure)
+        humi = int(self.sensor.data.humidity)
+        airq = self.calc_air_quality()
+        if airq != '-':
+            airq = int(airq)
+
         while True if exit_evt == None else not exit_evt.is_set():
-            self.bus.send(Message(data=b'sensor tick..'))
+            new_temp = self.sensor.data.temperature
+            if temp_in_f:
+                new_temp = self.c_to_f(temp)
+            new_temp = int(temp)
+            new_pres = int(self.sensor.data.pressure)
+            new_humi = int(self.sensor.data.humidity)
+            new_airq = self.calc_air_quality()
+            if new_airq != '-':
+                new_airq = int(new_airq)
+
+            # temperature offset in celcius after monitoring and comparing aginst another thermometer.
+            self.sensor.set_temp_offset(-3.35)
+
             if self.sensor.get_sensor_data():
                 self.build_gas_baseline()
-                if not verbose: continue
 
-                temp = self.sensor.data.temperature
-                pres = self.sensor.data.pressure
-                humi = self.sensor.data.humidity
-                airq = self.calc_air_quality()
-                output = 'temp: {0:.0f} C, pressure: {1:.1f} hPa, humidity: {2:.0f}%, air quaility: {3}%'.format(
-                    temp,
-                    pres,
-                    humi,
-                    airq)
+                values_changed = (temp != new_temp or
+                                  new_pres != pres or
+                                  new_humi != humi or
+                                  new_airq != airq)
 
-                print(output)
+                if self.bus is not None and values_changed:
+                    self.bus.send(Message(data=b'SNSTCK'))
+
+                if verbose:
+                    output = 'temp: {0:.0f} F, pressure: {1:.1f} hPa, humidity: {2:.0f}%, air quaility: {3}%'.format(
+                        temp,
+                        pres,
+                        humi,
+                        airq)
+
+                    print(output)
+
+            # update last seen values
+            temp = new_temp
+            pres = new_pres
+            humi = new_humi
+            airq = new_airq
 
             sleep_func(1)
 
