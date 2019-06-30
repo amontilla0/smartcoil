@@ -26,7 +26,7 @@ class SmartCoil():
         self.wthr = WeatherData()
         self.snsr = SensorData(self.msg_bus, 1)
         self.rc = RelayController()
-        self.gui  = SmartCoilGUIApp(self.rc)
+        self.gui  = SmartCoilGUIApp(self.msg_bus)
         dirname = os.path.dirname(__file__)
         self.dbase_path = os.path.join(dirname, '../assets/db/SmartCoilDB')
         self.exit = Event()
@@ -38,6 +38,9 @@ class SmartCoil():
 
         # Flag ot check if target temperature was reached.
         self.target_reached = False
+
+        # Once initialized, report the app is up and running to the DB
+        self.report_app_status_to_db('ON')
 
     def run_sensor(self, verbose = False):
         self.snsr.run_sensor(verbose, self.exit)
@@ -55,20 +58,35 @@ class SmartCoil():
             crsr.execute(sql, params)
             conn.commit()
 
-    def commit_weather_data(self, tstamp):
+    def report_app_status_to_db(self, status):
+        sql = 'INSERT INTO APP_STATUS VALUES (?, ?)'
+        tstamp = datetime.now()
+        data = [tstamp, status]
+        self.commit_to_db(sql, data)
+
+    def commit_weather_data(self, tstamp = None):
+        if tstamp is None:
+            tstamp = datetime.now()
+
         self.wthr.update_values()
         data = [tstamp] + self.wthr.get_conditions_data()
         sql = "INSERT INTO YR_WEATHER_API_DATA VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)"
         self.commit_to_db(sql, data)
 
-    def commit_sensor_data(self, tstamp):
+    def commit_sensor_data(self, tstamp = None):
+        if tstamp is None:
+            tstamp = datetime.now()
+
         data = [tstamp] + self.snsr.get_most_recent_readings()
         sql = "INSERT INTO SENSOR_BME680_DATA VALUES (?, ?, ?, ?, ?, ?)"
         self.commit_to_db(sql, data)
 
-    def commit_user_data(self, tstamp):
+    def commit_user_data(self, tstamp = None):
+        if tstamp is None:
+            tstamp = datetime.now()
+
         u_temp = self.gui.root.get_user_temp()
-        u_speed = self.gui.root.get_user_temp()
+        u_speed = self.gui.root.get_user_speed()
         data = [tstamp, u_temp, u_speed]
         sql = "INSERT INTO USER_DATA VALUES (?, ?, ?)"
         self.commit_to_db(sql, data)
@@ -105,12 +123,32 @@ class SmartCoil():
                 self.target_reached = True
                 self.rc.all_off()
 
+    def update_gui_values(self):
+        tmp, hum, airq = self.get_screen_data()
+        self.gui.root.updateCurrentTemp(tmp)
+        self.gui.root.updateHumidity(hum)
+        self.gui.root.updateAirQuality(airq)
+
+    def process_new_sensor_data(self):
+        self.monitor_temperature(offset=3)
+        self.update_gui_values()
+        self.commit_sensor_data()
+
+    def process_new_weather_data(self):
+        self.commit_weather_data()
+
+    def process_new_gui_data(self):
+        self.monitor_temperature(offset=3)
+        self.commit_user_data()
+
     def quit(self, signo, _frame):
         print('cleaning up before exiting app...')
         self.exit.set()
         self.rc.cleanup()
-        self.notifier.stop()
-        self.msg_bus.shutdown()
+
+        # Once terminated, report the app is down to the DB
+        self.report_app_status_to_db('OFF')
+
         exit(0)
 
     def periodic_data_log(self):
@@ -156,20 +194,28 @@ class SmartCoil():
 
     async def await_messages(self):
         switcher = {
-                    'SNSTCK': lambda: self.monitor_temperature(offset = 3),
-                    'WTHTCK': lambda: print('got a weather tick..'),
-                    'GUIMSG': lambda: print('got a gui message..'),
+                    'SNSMSG': lambda: self.process_new_sensor_data(),
+                    'GUIMSG': lambda: self.process_new_gui_data(),
+                    'WTHMSG': lambda: print('got a weather message..'),
+                    'EXIT': lambda: print('stopped awaiting messages..'),
         }
 
-        while True:
+        option = ''
+        while option != 'EXIT':
             msg = await self.reader.get_message()
             option = msg.data.decode('utf-8')
             action = switcher.get(option, lambda: print('unrecognized message.'))
 
             action()
 
-    def run_gui_thread(self):
-        th = Thread(target=self.run_gui, name='GUI')
+    def run_msg_handler(self):
+        self.loop.run_until_complete(self.await_messages())
+        self.notifier.stop()
+        self.msg_bus.shutdown()
+        self.loop.close()
+
+    def run_msg_handler_thread(self):
+        th = Thread(target=self.run_msg_handler, name='msghandler')
         th.start()
 
     def run(self):
@@ -180,11 +226,8 @@ class SmartCoil():
         # spawn thread in charge of keeping BME680 sensor periodically burning for the gas readings.
         self.run_sensor_thread()
 
-        # # awaiting for messages from other threads.
-        # self.loop.run_until_complete(self.await_messages())
-        # self.loop.close()
+        # spawn thread in charge of handling messages from other classes and perform according actions.
+        self.run_msg_handler_thread()
 
-        # spawn thread in charge of reading sensor+weather data and writing it to sqlite.
-        self.periodic_data_log_thread()
-
+        # run GUI as part of the main thread.
         self.run_gui()

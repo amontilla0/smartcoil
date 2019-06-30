@@ -20,7 +20,7 @@ class RelayController():
     def __init__(self):
         self.relays = [17,22,23,27]
         self.RELAYS_COUNT = len(self.relays)
-        self.init() 
+        self.init()
 
     # Sets the value for a given relay.
     # rel - the desired relay to control, values go from 0 to 3.

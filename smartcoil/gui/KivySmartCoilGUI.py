@@ -18,6 +18,8 @@ from kivy.animation import Animation
 from time import time
 from math import cos, sin, pi, sqrt
 
+from can import Message
+
 class CircularSlider(Slider):
     circ_slider = ObjectProperty(None)
     tmpture_txt = ObjectProperty(None)
@@ -70,46 +72,26 @@ class CircularSlider(Slider):
         self.handle_col2 = (hc[0], hc[1], hc[2], vn)
         self.halo_col2 = (hc[0], hc[1], hc[2], vn * 0.3)
 
-    def on_touch_move(self, touch):
-        sup = super(CircularSlider, self).on_touch_move(touch)
-        self.touch_y_pos = touch.y
-        self.set_color()
-        l = self.tmpture_txt
-        l.y = self.center_y + 20 - l.texture_size[1] / 2
-        return sup
-
-    def on_touch_down(self, touch):
-        sup = super(CircularSlider, self).on_touch_down(touch)
-        self.touch_y_pos = touch.y
-        self.set_color()
-        l = self.tmpture_txt
-        l.y = self.center_y + 20 - l.texture_size[1] / 2
-        return sup
-
 class GUIWidget(BoxLayout):
     LEFT_PADDING = NumericProperty(15)
 
-    def __init__(self, rc, **kwargs):
+    def __init__(self, bus, **kwargs):
         super(GUIWidget, self).__init__(**kwargs)
         self.orientation = 'vertical'
         self.ids.logo.source = os.path.join(os.path.dirname(__file__), '../../assets/icons/smartcoil-logo.png')
         self.ids.h_icon.source = os.path.join(os.path.dirname(__file__), '../../assets/icons/humidity_icon.png')
         self.ids.a_icon.source = os.path.join(os.path.dirname(__file__), '../../assets/icons/wave_icon.png')
         self.ids.c_sldr.set_color()
-        self.rc = rc
+        self.bus = bus
         self.speed = 1
+        self.last_usr_tmp_seen = int(self.ids.c_sldr.value)
 
-    def on_touch_down(self, touch):
-        if not self.collide_point(*touch.pos):
-            return
+    def on_touch_up(self, touch):
+        if self.last_usr_tmp_seen != int(self.ids.c_sldr.value):
+            self.bus.send(Message(data=b'GUIMSG'))
+            self.last_usr_tmp_seen = int(self.ids.c_sldr.value)
 
-        super(GUIWidget, self).on_touch_down(touch)
-
-    def on_touch_move(self, touch):
-        if not self.collide_point(*touch.pos):
-            return
-
-        super(GUIWidget, self).on_touch_move(touch)
+        return super(GUIWidget, self).on_touch_up(touch)
 
     def updateCurrentTemp(self, tmp):
         self.c_sldr.ids.curr_tmpture_txt.text = 'currently {}'.format(tmp)
@@ -137,28 +119,28 @@ class GUIWidget(BoxLayout):
 
     def fancoil_on_lo(self):
         self.speed = 1
-        self.rc.start_coil_at(self.speed)
+        self.bus.send(Message(data=b'GUIMSG'))
 
     def fancoil_on_mi(self):
         self.speed = 2
-        self.rc.start_coil_at(self.speed)
+        self.bus.send(Message(data=b'GUIMSG'))
 
     def fancoil_on_hi(self):
         self.speed = 3
-        self.rc.start_coil_at(self.speed)
+        self.bus.send(Message(data=b'GUIMSG'))
 
     def fancoil_off(self):
         self.speed = 0
-        self.rc.start_coil_at(self.speed)
+        self.bus.send(Message(data=b'GUIMSG'))
 
 
 class SmartCoilGUIApp(App):
-    def __init__(self, rc):
+    def __init__(self, bus = None):
         super(SmartCoilGUIApp, self).__init__()
-        self.rc = rc
+        self.bus = bus
 
     def build(self):
-        return GUIWidget(self.rc)
+        return GUIWidget(self.bus)
 
 if __name__ == "__main__":
     SmartCoilGUIApp().run()

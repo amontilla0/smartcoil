@@ -135,7 +135,7 @@ class SensorData:
                 new_airq = int(new_airq)
 
             # temperature offset in celcius after monitoring and comparing aginst another thermometer.
-            self.sensor.set_temp_offset(-3.35)
+            self.sensor.set_temp_offset(-3.32)
 
             if self.sensor.get_sensor_data():
                 self.build_gas_baseline()
@@ -146,7 +146,7 @@ class SensorData:
                                   new_airq != airq)
 
                 if self.bus is not None and values_changed:
-                    self.bus.send(Message(data=b'SNSTCK'))
+                    self.bus.send(Message(data=b'SNSMSG'))
 
                 if verbose:
                     output = 'temp: {0:.0f} F, pressure: {1:.1f} hPa, humidity: {2:.0f}%, air quaility: {3}%'.format(
@@ -164,6 +164,9 @@ class SensorData:
             airq = new_airq
 
             sleep_func(1)
+
+        if self.bus is not None:
+            self.bus.send(Message(data=b'EXIT'))
 
 if __name__=='__main__':
     sd = SensorData()
