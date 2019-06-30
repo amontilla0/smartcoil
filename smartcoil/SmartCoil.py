@@ -1,6 +1,6 @@
-from .weatherData import WeatherData
-from .sensorData import SensorData
-from .relayController import RelayController
+from .peripherals.sensorData import SensorData
+from .peripherals.relayController import RelayController
+from .externals.weatherData import WeatherData
 from .gui.KivySmartCoilGUI import SmartCoilGUIApp
 from time import sleep
 from threading import Thread, Event
