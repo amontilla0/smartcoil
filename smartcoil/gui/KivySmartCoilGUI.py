@@ -1,4 +1,5 @@
 import os
+os.environ["KIVY_NO_CONSOLELOG"] = "1"
 from functools import wraps
 
 from kivy.app import App
@@ -111,11 +112,28 @@ class GUIWidget(BoxLayout):
     def get_user_temp(self):
         return int(self.c_sldr.ids.tmpture_txt.text)
 
+    def set_user_temp(self, temp):
+        self.c_sldr.value = temp
+
     def user_turned_off_fancoil(self):
         return self.speed == 0
 
     def get_user_speed(self):
         return self.speed
+
+    def set_user_speed(self, speed):
+        self.speed = speed
+
+        off = self.ids.off_button
+        lo = self.ids.lo_button
+        mi = self.ids.mi_button
+        hi = self.ids.hi_button
+        buttons = [off, lo, mi, hi]
+
+        for b in buttons:
+            b.state = 'normal'
+
+        buttons[speed].state = 'down'
 
     def fancoil_on_lo(self):
         self.speed = 1
