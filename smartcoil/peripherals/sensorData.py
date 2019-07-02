@@ -1,6 +1,7 @@
 import bme680
 import time
 from can import Message
+from ..utils import utils
 
 class SensorData:
     def __init__(self, bus = None, burn_time = 300):
@@ -96,15 +97,12 @@ class SensorData:
 
         return air_quality_score
 
-    def c_to_f(self, celcius):
-        return celcius * 9 / 5 + 32
-
     def get_most_recent_readings(self, temp_in_f = True):
         if not self.sensor_ready(): return None
 
         temp = self.sensor.data.temperature
         if temp_in_f:
-            temp = self.c_to_f(temp)
+            temp = utils.c_to_f(temp)
         pres = self.sensor.data.pressure
         humi = self.sensor.data.humidity
         gas_res = self.sensor.data.gas_resistance
@@ -117,7 +115,7 @@ class SensorData:
 
         temp = self.sensor.data.temperature
         if temp_in_f:
-            temp = self.c_to_f(temp)
+            temp = utils.c_to_f(temp)
         # 'half-rounding' temperature to closest 0.5 increment
         temp = round(temp) - (round(temp) - int(temp))/2
 
@@ -130,7 +128,7 @@ class SensorData:
         while True if exit_evt == None else not exit_evt.is_set():
             new_temp = self.sensor.data.temperature
             if temp_in_f:
-                new_temp = self.c_to_f(new_temp)
+                new_temp = utils.c_to_f(new_temp)
             real_temp = new_temp
             # 'half-rounding' temperature to closest 0.5 increment
             new_temp = round(new_temp) - (round(new_temp) - int(new_temp))/2

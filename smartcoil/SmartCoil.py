@@ -106,13 +106,16 @@ class SmartCoil():
         t, *_ = self.snsr.get_most_recent_readings()
         return t
 
-    def get_screen_data(self):
+    def get_user_screen_data(self):
         t, p, h, g, a = self.snsr.get_most_recent_readings()
         return (
         '{} °F'.format(round(t))
         ,round(h)
         ,round(a)
         )
+
+    def get_weather_screen_data(self):
+        return (self.wthr.temperature, self.wthr.weather_icon)
 
     def monitor_temperature(self, offset = 0):
         # there's an initial offset to reach the target temperature plus some additional degrees.
@@ -134,19 +137,26 @@ class SmartCoil():
                 self.fancoil_running = False
                 self.rc.all_off()
 
-    def update_gui_values(self):
-        tmp, hum, airq = self.get_screen_data()
+    def update_gui_user_values(self):
+        tmp, hum, airq = self.get_user_screen_data()
         self.gui.root.updateCurrentTemp(tmp)
         self.gui.root.updateHumidity(hum)
         self.gui.root.updateAirQuality(airq)
 
+    def update_gui_weather_values(self):
+        tmp, icon = self.get_weather_screen_data()
+        tmp_txt = '{} °F'.format(int(tmp))
+        self.gui.root.updateTodayTemp(tmp_txt)
+        self.gui.root.updateTodayIcon(icon)
+
     def process_new_sensor_data(self):
         self.monitor_temperature(offset=3)
-        self.update_gui_values()
+        self.update_gui_user_values()
         self.commit_sensor_data()
 
     def process_new_weather_data(self):
         self.commit_weather_data()
+        self.update_gui_weather_values()
 
     def process_new_gui_data(self):
         prev_state = self.fancoil_running
@@ -182,7 +192,7 @@ class SmartCoil():
             if self.sensor_ready():
                 self.monitor_temperature(offset = 3)
 
-                tmp, hum, airq = self.get_screen_data()
+                tmp, hum, airq = self.get_user_screen_data()
                 self.gui.root.updateCurrentTemp(tmp)
                 self.gui.root.updateHumidity(hum)
                 self.gui.root.updateAirQuality(airq)
@@ -215,7 +225,7 @@ class SmartCoil():
         switcher = {
                     'SNSMSG': lambda: self.process_new_sensor_data(),
                     'GUIMSG': lambda: self.process_new_gui_data(),
-                    'WTHMSG': lambda: print('got a weather message..'),
+                    'WTHMSG': lambda: self.process_new_weather_data(),
                     'EXIT': lambda: print('stopped awaiting messages..'),
         }
 
