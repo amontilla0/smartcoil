@@ -22,8 +22,7 @@ class SmartCoil():
         self.reader = can.AsyncBufferedReader()
         listeners = [ self.reader ]
         self.notifier = can.Notifier(self.msg_bus, listeners, loop=self.loop)
-
-        self.wthr = WeatherData()
+        self.wthr = WeatherData(self.msg_bus)
         self.snsr = SensorData(self.msg_bus, 1)
         self.rc = RelayController()
         self.gui  = SmartCoilGUIApp(self.msg_bus)
@@ -45,11 +44,18 @@ class SmartCoil():
         # Once initialized, report the app is up and running to the DB
         self.report_app_status_to_db('ON')
 
-    def run_sensor(self):
+    def run_sensor_fetcher(self):
         self.snsr.run_sensor(exit_evt = self.exit)
 
-    def run_sensor_thread(self):
-        th = Thread(target=self.run_sensor, name='sensorRun')
+    def run_sensor_fetcher_thread(self):
+        th = Thread(target=self.run_sensor_fetcher, name='sensorFetcher')
+        th.start()
+
+    def run_weather_fetcher(self):
+        self.wthr.run_updates(exit_evt = self.exit)
+
+    def run_weather_fetcher_thread(self):
+        th = Thread(target=self.run_weather_fetcher, name='weatherFetcher')
         th.start()
 
     def run_gui(self):
@@ -71,7 +77,6 @@ class SmartCoil():
         if tstamp is None:
             tstamp = datetime.now()
 
-        self.wthr.update_values()
         data = [tstamp] + self.wthr.get_conditions_data()
         sql = "INSERT INTO YR_WEATHER_API_DATA VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)"
         self.commit_to_db(sql, data)
@@ -104,19 +109,19 @@ class SmartCoil():
     def get_screen_data(self):
         t, p, h, g, a = self.snsr.get_most_recent_readings()
         return (
-        '{} °F'.format(int(t))
-        ,int(h)
-        ,int(a)
+        '{} °F'.format(round(t))
+        ,round(h)
+        ,round(a)
         )
 
     def monitor_temperature(self, offset = 0):
         # there's an initial offset to reach the target temperature plus some additional degrees.
-        # However, once this target is reached, the offset is set to zero in order to wait some time
-        # until the room temperature is out of the initial target again (disregarding the offset).
-        dynamic_offset = 0 if self.target_reached else offset
+        # However, once this target is reached, the offset is set to 2 in order to wait some time
+        # until the room temperature is 2 degrees before the initial target again (disregarding the offset).
+        dynamic_offset = 2 if self.target_reached else -abs(offset)
 
         mult  = 1 if self.mode == COOLING else -1
-        trigger_fancoil = mult * self.get_current_temp() - mult * self.gui.root.get_user_temp() > -abs(dynamic_offset)
+        trigger_fancoil = mult * self.get_current_temp() - mult * self.gui.root.get_user_temp() > dynamic_offset
 
         if not self.gui.root.user_turned_off_fancoil() and trigger_fancoil:
             if not self.rc.fancoil_is_on():
@@ -261,14 +266,18 @@ class SmartCoil():
         for sig in ('TERM', 'HUP', 'INT'):
             signal.signal(getattr(signal, 'SIG'+sig), self.quit)
 
-        # spawn thread in charge of keeping BME680 sensor periodically burning for the gas readings.
-        self.run_sensor_thread()
+        # ENVIRONMENT RELATED THREADS:
+        # spawn thread in charge of fetching BME680 sensor readings.
+        self.run_sensor_fetcher_thread()
+        # spawn thread in charge of fetching data from the weather API.
+        self.run_weather_fetcher_thread()
 
+        # MESSAGE HANDLING THREAD:
         # spawn thread in charge of handling messages from other classes and perform according actions.
         self.run_msg_handler_thread()
 
+        # GUI RELATED THREADS:
         # spawn thread that checks for previous user configuration.
         self.run_fetch_user_data_init_thread()
-
         # run GUI as part of the main thread.
         self.run_gui()

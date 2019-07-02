@@ -142,7 +142,7 @@ class SensorData:
                 new_airq = int(new_airq)
 
             # temperature offset in celcius after monitoring and comparing aginst another thermometer.
-            self.sensor.set_temp_offset(-3.32)
+            self.sensor.set_temp_offset(-1.9)
 
             if self.sensor.get_sensor_data():
                 self.build_gas_baseline()
