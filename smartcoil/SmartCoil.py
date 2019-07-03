@@ -118,7 +118,7 @@ class SmartCoil():
         return (self.wthr.temperature, self.wthr.weather_icon)
 
     def monitor_temperature(self, offset = 0):
-        # there's an initial offset to reach the target temperature plus some additional degrees.
+        # There's an initial offset to reach the target temperature plus some additional degrees.
         # However, once this target is reached, the offset is set to 2 in order to wait some time
         # until the room temperature is 2 degrees before the initial target again (disregarding the offset).
         dynamic_offset = 2 if self.target_reached else -abs(offset)
@@ -127,10 +127,11 @@ class SmartCoil():
         trigger_fancoil = mult * self.get_current_temp() - mult * self.gui.root.get_user_temp() > dynamic_offset
 
         if not self.gui.root.user_turned_off_fancoil() and trigger_fancoil:
-            if not self.rc.fancoil_is_on():
+            if not self.rc.fancoil_is_on() or self.gui.root.get_speed_changed_flag():
                 self.target_reached = False
                 self.fancoil_running = True
                 self.rc.start_coil_at(self.gui.root.get_user_speed())
+                self.gui.root.clear_speed_changed_flag()
         else:
             if self.rc.fancoil_is_on():
                 self.target_reached = True
@@ -249,7 +250,7 @@ class SmartCoil():
 
     # This method checks for a previous configuration made by the user to restore such state.
     # It is run as a thread and waits for the GUI to be initialized before making adjustments.
-    def fetch_user_data_init(self):
+    def fetch_gui_data_init(self):
         while self.gui.root is None:
             sleep(0.05)
 
@@ -267,8 +268,13 @@ class SmartCoil():
         if not config_found:
             self.commit_user_data()
 
-    def run_fetch_user_data_init_thread(self):
-        th = Thread(target=self.fetch_user_data_init, name='usrdatainit')
+        # fetch most recent weather data and feed it to the GUI.
+        self.wthr.retry_update_values()
+        self.process_new_weather_data()
+
+
+    def run_fetch_gui_data_init_thread(self):
+        th = Thread(target=self.fetch_gui_data_init, name='usrdatainit')
         th.start()
 
     def run(self):
@@ -287,7 +293,7 @@ class SmartCoil():
         self.run_msg_handler_thread()
 
         # GUI RELATED THREADS:
-        # spawn thread that checks for previous user configuration.
-        self.run_fetch_user_data_init_thread()
+        # spawn thread that checks for previous user configuration and current weather values.
+        self.run_fetch_gui_data_init_thread()
         # run GUI as part of the main thread.
         self.run_gui()

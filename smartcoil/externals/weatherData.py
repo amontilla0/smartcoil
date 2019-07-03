@@ -46,6 +46,23 @@ class WeatherData:
         is_night = 0 if datetime.now().hour < 18 else 1
         self.weather_icon = 'https://api.met.no/weatherapi/weathericon/1.1?content_type=image%2Fpng&is_night={}&symbol={}'.format(is_night, self.condition_code)
 
+    def retry_update_values(self, exit_evt = None):
+        sleep_func = time.sleep if exit_evt == None else exit_evt.wait
+        retried = False
+
+        while True if exit_evt == None else not exit_evt.is_set():
+            try:
+                self.update_values()
+                break
+            except Exception as e:
+                retried = True
+                ex_name = type(e).__name__
+                ex_time = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+                print('[{}] EXCEPTION: ({}: {}) raised while fetching weather data, retrying...'.format(ex_time, ex_name, e))
+                sleep_func(3)
+
+        return retried
+
     def get_conditions_text(self):
         temp_units = 'F' if self.temp_in_f else 'C'
         return '''temperature is {0:.1f} °{1} with humidity of {2:.0f}% and pressure of {3:.1f} hPa. General conditions are {4}
@@ -88,16 +105,7 @@ Wind is {5:.1f} Km/h {6} and we have an expected precipitation of {6} millimeter
                 retried = False
 
                 # do-while until data from weather API is fetched
-                while True if exit_evt == None else not exit_evt.is_set():
-                    try:
-                        self.update_values()
-                        break
-                    except Exception as e:
-                        retried = True
-                        ex_name = type(e).__name__
-                        ex_time = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
-                        print('[{}] EXCEPTION: ({}: {}) raised while fetching weather data, retrying...'.format(ex_time, ex_name, e))
-                        sleep_func(3)
+                retried = self.retry_update_values(exit_evt=exit_evt)
 
                 if retried:
                     succ_time = datetime.now().strftime('%Y-%m-%d %H:%M:%S')

@@ -200,10 +200,10 @@
                         x: tod_lbl.x + tod_lbl.texture_size[0] /2 + self.texture_size[0] / 2 + 10
                         center_y: self.height - self.texture_size[1] /2   - 15
                         font_size: tod_lbl.font_size
-                        text: '60 °F'
+                        text: '.. °F'
                     AsyncIcon:
                         id: tod_icon
                         # places the icon after the two labels
                         x: tod_lbl.texture_size[0] + tod_tmp.texture_size[0] + 1
                         y: tod_lbl.center_y - self.height / 1.65
-                        source: 'https://api.met.no/weatherapi/weathericon/1.1?content_type=image%2Fpng&is_night=1&symbol=3'
+                        source: 'none yet..'

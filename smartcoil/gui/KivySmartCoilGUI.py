@@ -85,14 +85,26 @@ class GUIWidget(BoxLayout):
         self.ids.c_sldr.set_color()
         self.bus = bus
         self.speed = 1
+        self.speed_changed = False
         self.last_usr_tmp_seen = int(self.ids.c_sldr.value)
 
+    def on_touch_move(self, touch):
+        sup = super(GUIWidget, self).on_touch_move(touch)
+        self.ids.c_sldr.set_color()
+        return sup
+
+    def on_touch_down(self, touch):
+        sup = super(GUIWidget, self).on_touch_down(touch)
+        self.ids.c_sldr.set_color()
+        return sup
+
     def on_touch_up(self, touch):
+        sup = super(GUIWidget, self).on_touch_up(touch)
         if self.last_usr_tmp_seen != int(self.ids.c_sldr.value):
             self.bus.send(Message(data=b'GUIMSG'))
             self.last_usr_tmp_seen = int(self.ids.c_sldr.value)
 
-        return super(GUIWidget, self).on_touch_up(touch)
+        return sup
 
     def updateCurrentTemp(self, tmp):
         self.c_sldr.ids.curr_tmpture_txt.text = 'currently {}'.format(tmp)
@@ -121,6 +133,12 @@ class GUIWidget(BoxLayout):
     def get_user_speed(self):
         return self.speed
 
+    def get_speed_changed_flag(self):
+        return self.speed_changed
+
+    def clear_speed_changed_flag(self):
+        self.speed_changed = False
+
     def set_user_speed(self, speed):
         self.speed = speed
 
@@ -137,14 +155,17 @@ class GUIWidget(BoxLayout):
 
     def fancoil_on_lo(self):
         self.speed = 1
+        self.speed_changed = True
         self.bus.send(Message(data=b'GUIMSG'))
 
     def fancoil_on_mi(self):
         self.speed = 2
+        self.speed_changed = True
         self.bus.send(Message(data=b'GUIMSG'))
 
     def fancoil_on_hi(self):
         self.speed = 3
+        self.speed_changed = True
         self.bus.send(Message(data=b'GUIMSG'))
 
     def fancoil_off(self):
