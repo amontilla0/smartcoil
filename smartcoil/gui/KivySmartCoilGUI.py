@@ -1,5 +1,6 @@
 import os
 os.environ["KIVY_NO_CONSOLELOG"] = "1"
+import traceback
 from functools import wraps
 
 from kivy.app import App
@@ -82,6 +83,7 @@ class GUIWidget(BoxLayout):
         self.ids.logo.source = os.path.join(os.path.dirname(__file__), '../../assets/icons/smartcoil-logo.png')
         self.ids.h_icon.source = os.path.join(os.path.dirname(__file__), '../../assets/icons/humidity_icon.png')
         self.ids.a_icon.source = os.path.join(os.path.dirname(__file__), '../../assets/icons/wave_icon.png')
+        self.ids.tod_icon.source = os.path.join(os.path.dirname(__file__), '../../assets/icons/placeholder.png')
         self.ids.c_sldr.set_color()
         self.bus = bus
         self.speed = 1
@@ -119,7 +121,13 @@ class GUIWidget(BoxLayout):
         self.tod_tmp.text = '{}'.format(tmp)
 
     def updateTodayIcon(self, src):
-        self.tod_icon.source = src
+        try:
+            self.tod_icon.source = src
+        except Exception as e:
+            print('Exception at GUIWidget.updateTodayIcon')
+            print(type(e))
+            print(e)
+            traceback.print_tb(e.__traceback__)
 
     def get_user_temp(self):
         return int(self.c_sldr.ids.tmpture_txt.text)
