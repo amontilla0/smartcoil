@@ -104,3 +104,4 @@ venv.bak/
 .mypy_cache/
 
 assets/db/SmartCoilDB
+assets/config/server_config.json

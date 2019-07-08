@@ -1,0 +1,5 @@
+{
+"tunnel": <your-tunnel-address-here>,
+"port": <your-port-here>,
+"token": <simple-auth-token-here>,
+}
