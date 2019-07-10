@@ -1,17 +1,32 @@
-from flask import Flask, request #import main Flask class and request object
+from flask import Flask, Response, request
 from waitress import serve
 import os
 from shutil import copyfile
 import json
 import subprocess
+from can import Message
 
-class TunnelHandler():
+class Endpoint(object):
+    def __init__(self, action):
+        self.action = action
+
+    def __call__(self, *args):
+        answer = self.action()
+        self.response = Response(answer, status=200, headers={})
+        return self.response
+
+class ServerManager():
     def __init__(self):
+        self.app = Flask(__name__)
+        self.load_endpoints()
+
         self.tunnel_address = None
         self.tunnel_port = None
         self.acces_token = None
+        self.load_tunnel_config()
 
-    def load_config(self):
+    ### TUNNEL RELATED METHODS ###
+    def load_tunnel_config(self):
         dirname = os.path.dirname(__file__)
         config_path = os.path.join(dirname, '../../assets/config/server_config.json')
         # Verify the server config file exists. If not, copy the template.
@@ -32,90 +47,109 @@ class TunnelHandler():
     def token_is_valid(self, tok):
         return self.acces_token == tok
 
+    ### FLASK RELATED METHODS ###
+    def add_endpoint(self, handler=None, endpoint=None, endpoint_name=None):
+        endpoint_name = endpoint[1:] if endpoint_name is None else endpoint_name
+        self.app.add_url_rule(endpoint, endpoint_name, Endpoint(handler), methods=['POST'])
+
+    def load_endpoints(self):
+        self.add_endpoint(self.turn_smartcoil, "/turn_smartcoil")
+        self.add_endpoint(self.set_smartcoil_speed, "/set_smartcoil_speed")
+        self.add_endpoint(self.set_smartcoil_temperature, "/set_smartcoil_temperature")
+        self.add_endpoint(self.get_smartcoil_speed, "/get_smartcoil_speed")
+        self.add_endpoint(self.get_smartcoil_temperature, "/get_smartcoil_temperature")
+
+
+    def access_data_is_valid(self):
+        req_data = None
+
+        try:
+            req_data = request.get_json()
+            token = req_data['token']
+            if not self.token_is_valid(token):
+                print('INVALID TOKEN!')
+                return (False, None, '{"error": "invalid token"}')
+        except:
+            print('INVALID ACCESS INFO!')
+            return (False, None, '{"error": "invalid access info"}')
+
+        return (True, req_data, None)
+
+    # ENDPOINTS DECLARATION:
+    def turn_smartcoil(self):
+        try:
+            data_is_valid, data, err = self.access_data_is_valid()
+            if not data_is_valid:
+                return err
+
+            switch = data['switch']
+
+            res = 'SmartCoil is now {}'.format(switch)
+            print('DEBUG:',res)
+            return '{{"success": "{}"}}'.format(res)
+        except:
+            return '{"error": "invalid information"}'
+
+    def set_smartcoil_speed(self):
+        try:
+            data_is_valid, data, err = self.access_data_is_valid()
+            if not data_is_valid:
+                return err
+
+            speed = data['speed']
+
+            res = 'the speed is now {}'.format(speed)
+            print('DEBUG:',res)
+            return '{{"success": "{}"}}'.format(res)
+        except:
+            return '{"error": "invalid information"}'
+
+    def set_smartcoil_temperature(self):
+        try:
+            data_is_valid, data, err = self.access_data_is_valid()
+            if not data_is_valid:
+                return err
+
+            temperature = data['temperature']
+
+            res = 'the temp is now {}'.format(temperature)
+            print('DEBUG:',res)
+            return '{{"success": "{}"}}'.format(res)
+        except:
+            return '{"error": "invalid information"}'
+
+    def get_smartcoil_speed(self):
+        try:
+            data_is_valid, data, err = self.access_data_is_valid()
+            if not data_is_valid:
+                return err
+
+            speed = 5 # get speed from smartcoil..
+
+            res = 'current smartcoil speed is {}'.format(speed)
+            print('DEBUG:',res)
+            return '{{"success": "speed fetched", "speed": {}}}'.format(speed)
+        except:
+            return '{"error": "invalid information"}'
+
+    def get_smartcoil_temperature(self):
+        try:
+            data_is_valid, data, err = self.access_data_is_valid()
+            if not data_is_valid:
+                return err
+
+            temp = 100 # get temperature from smartcoil..
+
+            res = 'current smartcoil temperature is {}'.format(speed)
+            print('DEBUG:',res)
+            return '{{"success": "temperature fetched", "speed": {}}}'.format(speed)
+        except:
+            return '{"error": "invalid information"}'
+
     def run(self):
-        self.load_config()
         self.run_tunnel()
-
-
-
-th = TunnelHandler()
-app = Flask(__name__) #create the Flask app
-
-def access_data_is_valid():
-    req_data = None
-
-    try:
-        req_data = request.get_json()
-        token = req_data['token']
-        if not th.token_is_valid(token):
-            print('INVALID TOKEN!')
-            return (False, None, '{"error": "invalid token"}')
-    except:
-        print('INVALID ACCESS INFO!')
-        return (False, None, '{"error": "invalid access info"}')
-
-    return (True, req_data, None)
-
-@app.route('/turn_smartcoil', methods=['POST'])
-def turn_smartcoil():
-    try:
-        data_is_valid, data, err = access_data_is_valid()
-        if not data_is_valid:
-            return err
-
-        switch = data['switch']
-
-        res = 'SmartCoil is now {}'.format(switch)
-        print('DEBUG:',res)
-        return '{{"success": "{}"}}'.format(res)
-    except:
-        return '{"error": "invalid information"}'
-
-@app.route('/set_smartcoil_speed', methods=['POST'])
-def set_smartcoil_speed():
-    try:
-        data_is_valid, data, err = access_data_is_valid()
-        if not data_is_valid:
-            return err
-
-        speed = data['speed']
-
-        res = 'the speed is now {}'.format(speed)
-        print('DEBUG:',res)
-        return '{{"success": "{}"}}'.format(res)
-    except:
-        return '{"error": "invalid information"}'
-
-@app.route('/set_smartcoil_temperature', methods=['POST'])
-def set_smartcoil_temperature():
-    try:
-        data_is_valid, data, err = access_data_is_valid()
-        if not data_is_valid:
-            return err
-
-        temperature = data['temperature']
-
-        res = 'the temp is now {}'.format(temperature)
-        print('DEBUG:',res)
-        return '{{"success": "{}"}}'.format(res)
-    except:
-        return '{"error": "invalid information"}'
-
-@app.route('/get_smartcoil_speed', methods=['POST'])
-def get_smartcoil_speed():
-    try:
-        data_is_valid, data, err = access_data_is_valid()
-        if not data_is_valid:
-            return err
-
-        speed = 5 # get speed from smartcoil..
-
-        res = 'current smartcoil speed is {}'.format(speed)
-        print('DEBUG:',res)
-        return '{{"success": "speed fetched", "speed": {}}}'.format(speed)
-    except:
-        return '{"error": "invalid information"}'
+        serve(self.app, host='0.0.0.0', port=self.tunnel_port)
 
 if __name__ == '__main__':
-    th.run()
-    serve(app, host='0.0.0.0', port=th.tunnel_port)
+    srv = ServerManager()
+    srv.run()
