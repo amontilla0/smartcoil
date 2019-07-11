@@ -4,7 +4,8 @@ import os
 from shutil import copyfile
 import json
 import subprocess
-from can import Message
+import can
+from ..utils import utils
 
 class Endpoint(object):
     def __init__(self, action):
@@ -16,9 +17,12 @@ class Endpoint(object):
         return self.response
 
 class ServerManager():
-    def __init__(self):
+    def __init__(self, outqueue = None, inqueue = None):
         self.app = Flask(__name__)
         self.load_endpoints()
+
+        self.inbound_queue = inqueue
+        self.outbound_queue = outqueue
 
         self.tunnel_address = None
         self.tunnel_port = None
@@ -29,6 +33,7 @@ class ServerManager():
     def load_tunnel_config(self):
         dirname = os.path.dirname(__file__)
         config_path = os.path.join(dirname, '../../assets/config/server_config.json')
+
         # Verify the server config file exists. If not, copy the template.
         if not os.path.exists(config_path):
             print('initializing config from template. Remember to update with proper values...')
@@ -41,7 +46,10 @@ class ServerManager():
             self.acces_token = conf['token']
 
     def run_tunnel(self):
-        tunnel = subprocess.Popen(['python2', 'pagekite.py', str(self.tunnel_port), self.tunnel_address], stdout=subprocess.PIPE)
+        dirname = os.path.dirname(__file__)
+        pagekite_path = os.path.join(dirname, 'pagekite.py')
+
+        tunnel = subprocess.Popen(['python2', pagekite_path, str(self.tunnel_port), self.tunnel_address], stdout=subprocess.PIPE)
         print(tunnel)
 
     def token_is_valid(self, tok):
@@ -75,9 +83,12 @@ class ServerManager():
 
         return (True, req_data, None)
 
+    def message_smartcoil(self, action, params):
+        self.outbound_queue.put(utils.Message('SRVMSG', action, params))
+
     # ENDPOINTS DECLARATION:
     def turn_smartcoil(self):
-        try:
+        # try:
             data_is_valid, data, err = self.access_data_is_valid()
             if not data_is_valid:
                 return err
@@ -86,9 +97,11 @@ class ServerManager():
 
             res = 'SmartCoil is now {}'.format(switch)
             print('DEBUG:',res)
+            self.message_smartcoil('turn_smartcoil', {'value': switch})
+
             return '{{"success": "{}"}}'.format(res)
-        except:
-            return '{"error": "invalid information"}'
+        # except:
+        #     return '{"error": "invalid information"}'
 
     def set_smartcoil_speed(self):
         try:
