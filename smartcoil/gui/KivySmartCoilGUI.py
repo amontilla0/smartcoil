@@ -20,7 +20,7 @@ from kivy.animation import Animation
 from time import time
 from math import cos, sin, pi, sqrt
 
-from can import Message
+from ..utils import utils
 
 class CircularSlider(Slider):
     circ_slider = ObjectProperty(None)
@@ -77,7 +77,7 @@ class CircularSlider(Slider):
 class GUIWidget(BoxLayout):
     LEFT_PADDING = NumericProperty(15)
 
-    def __init__(self, bus, **kwargs):
+    def __init__(self, outqueue, **kwargs):
         super(GUIWidget, self).__init__(**kwargs)
         self.orientation = 'vertical'
         self.ids.logo.source = os.path.join(os.path.dirname(__file__), '../../assets/icons/smartcoil-logo.png')
@@ -85,7 +85,7 @@ class GUIWidget(BoxLayout):
         self.ids.a_icon.source = os.path.join(os.path.dirname(__file__), '../../assets/icons/wave_icon.png')
         self.ids.tod_icon.source = os.path.join(os.path.dirname(__file__), '../../assets/icons/placeholder.png')
         self.ids.c_sldr.set_color()
-        self.bus = bus
+        self.outbound_queue = outqueue
         self.speed = 1
         self.speed_changed = False
         self.last_usr_tmp_seen = int(self.ids.c_sldr.value)
@@ -103,7 +103,7 @@ class GUIWidget(BoxLayout):
     def on_touch_up(self, touch):
         sup = super(GUIWidget, self).on_touch_up(touch)
         if self.last_usr_tmp_seen != int(self.ids.c_sldr.value):
-            self.bus.send(Message(data=b'GUIMSG'))
+            self.outbound_queue.put(utils.Message('GUIMSG'))
             self.last_usr_tmp_seen = int(self.ids.c_sldr.value)
 
         return sup
@@ -164,30 +164,30 @@ class GUIWidget(BoxLayout):
     def fancoil_on_lo(self):
         self.speed = 1
         self.speed_changed = True
-        self.bus.send(Message(data=b'GUIMSG'))
+        self.outbound_queue.put(utils.Message('GUIMSG'))
 
     def fancoil_on_mi(self):
         self.speed = 2
         self.speed_changed = True
-        self.bus.send(Message(data=b'GUIMSG'))
+        self.outbound_queue.put(utils.Message('GUIMSG'))
 
     def fancoil_on_hi(self):
         self.speed = 3
         self.speed_changed = True
-        self.bus.send(Message(data=b'GUIMSG'))
+        self.outbound_queue.put(utils.Message('GUIMSG'))
 
     def fancoil_off(self):
         self.speed = 0
-        self.bus.send(Message(data=b'GUIMSG'))
+        self.outbound_queue.put(utils.Message('GUIMSG'))
 
 
 class SmartCoilGUIApp(App):
-    def __init__(self, bus = None):
+    def __init__(self, outqueue = None):
         super(SmartCoilGUIApp, self).__init__()
-        self.bus = bus
+        self.outbound_queue = outqueue
 
     def build(self):
-        return GUIWidget(self.bus)
+        return GUIWidget(self.outbound_queue)
 
 if __name__ == "__main__":
     SmartCoilGUIApp().run()

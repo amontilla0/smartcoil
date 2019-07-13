@@ -2,13 +2,12 @@ from urllib.request import urlopen
 import json
 from yr.libyr import Yr
 from datetime import datetime
-from can import Message
 import time
 from ..utils import utils
 
 class WeatherData:
-    def __init__(self, bus = None, temp_in_f = True):
-        self.bus = bus
+    def __init__(self, outqueue = None, temp_in_f = True):
+        self.outbound_queue = outqueue
         self.temp_in_f = temp_in_f
         self.update_values()
 
@@ -111,8 +110,8 @@ Wind is {5:.1f} Km/h {6} and we have an expected precipitation of {6} millimeter
                     succ_time = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
                     print('[{}] SUCCESS: Exception {} raised at {} has been dealt with.'.format(succ_time, ex_name, ex_time))
 
-                if self.bus is not None:
-                    self.bus.send(Message(data=b'WTHMSG'))
+                if self.outbound_queue is not None:
+                    self.outbound_queue.put(utils.Message('WTHMSG'))
 
                 weatherUpdated = True
                 last_updated_minute = now_minute

@@ -1,12 +1,11 @@
 import bme680
 import time
-from can import Message
 from ..utils import utils
 
 class SensorData:
-    def __init__(self, bus = None, burn_time = 300):
+    def __init__(self, outqueue = None, burn_time = 300):
         try:
-            self.bus = bus
+            self.outbound_queue = outqueue
             self.sensor = bme680.BME680(bme680.I2C_ADDR_PRIMARY)
              #3.32
         except IOError:
@@ -150,8 +149,8 @@ class SensorData:
                                   new_humi != humi or
                                   new_airq != airq)
 
-                if self.bus is not None and values_changed:
-                    self.bus.send(Message(data=b'SNSMSG'))
+                if self.outbound_queue is not None and values_changed:
+                    self.outbound_queue.put(utils.Message('SNSMSG'))
 
                 if verbose:
                     output = 'temp: {0:.2f} F ({1:.3f}), pressure: {2:.1f} hPa, humidity: {3:.0f}%, air quaility: {4}%'.format(
@@ -170,8 +169,8 @@ class SensorData:
 
             sleep_func(1)
 
-        if self.bus is not None:
-            self.bus.send(Message(data=b'EXIT'))
+        if self.outbound_queue is not None:
+            self.outbound_queue.put(utils.Message('EXIT'))
 
 if __name__=='__main__':
     sd = SensorData()

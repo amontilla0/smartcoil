@@ -4,7 +4,6 @@ import os
 from shutil import copyfile
 import json
 import subprocess
-import can
 from ..utils import utils
 
 class Endpoint(object):

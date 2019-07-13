@@ -2,10 +2,11 @@ from .peripherals.sensorData import SensorData
 from .peripherals.relayController import RelayController
 from .externals.weatherData import WeatherData
 from .gui.KivySmartCoilGUI import SmartCoilGUIApp
+from .server.Manager import ServerManager
 from time import sleep
 from threading import Thread, Event
-import asyncio
-import can
+from queue import Queue
+from .utils import utils
 import signal
 import sqlite3
 from datetime import datetime
@@ -19,16 +20,16 @@ COOLING = 2
 class SmartCoil():
     def __init__(self):
         try:
-            # preparation of bus that will receive async messages.
-            self.msg_bus = can.Bus('bus1', bustype='virtual', receive_own_messages=True)
-            self.loop = asyncio.get_event_loop()
-            self.reader = can.AsyncBufferedReader()
-            listeners = [ self.reader ]
-            self.notifier = can.Notifier(self.msg_bus, listeners, loop=self.loop)
-            self.wthr = WeatherData(self.msg_bus)
-            self.snsr = SensorData(self.msg_bus, 1)
+            # preparation of queues that will manage messages between threads.
+            self.inbound_queue = Queue()
+            self.outbound_queue = Queue()
+
+            self.wthr = WeatherData(self.inbound_queue)
+            self.snsr = SensorData(self.inbound_queue, 1)
             self.rc = RelayController()
-            self.gui  = SmartCoilGUIApp(self.msg_bus)
+            self.gui  = SmartCoilGUIApp(self.inbound_queue)
+            self.srv = ServerManager(self.inbound_queue, self.outbound_queue)
+
             dirname = os.path.dirname(__file__)
             self.dbase_path = os.path.join(dirname, '../assets/db/SmartCoilDB')
             self.exit = Event()
@@ -81,6 +82,19 @@ class SmartCoil():
 
     def run_weather_fetcher_thread(self):
         th = Thread(target=self.run_weather_fetcher, name='weatherFetcher')
+        th.start()
+
+    def run_server(self):
+        try:
+            self.srv.run()
+        except Exception as e:
+            print('Exception at SmartCoil.run_server')
+            print(type(e))
+            print(e)
+            traceback.print_tb(e.__traceback__)
+
+    def run_server_thread(self):
+        th = Thread(target=self.run_server, name='AlexaRequestsServer')
         th.start()
 
     def run_gui(self):
@@ -202,6 +216,10 @@ class SmartCoil():
         if fancoil_state_changed:
             self.commit_sensor_data()
 
+    # TODO: implement method...
+    def process_new_alexa_data(self, action, params):
+        pass
+
     def quit(self, signo, _frame):
         print('cleaning up before exiting app...')
         self.exit.set()
@@ -212,40 +230,32 @@ class SmartCoil():
 
         exit(0)
 
-    async def await_messages(self):
-        try:
-            switcher = {
-                        'SNSMSG': lambda: self.process_new_sensor_data(),
-                        'GUIMSG': lambda: self.process_new_gui_data(),
-                        'WTHMSG': lambda: self.process_new_weather_data(),
-                        'EXIT': lambda: print('stopped awaiting messages..'),
-            }
-
-            option = ''
-            while option != 'EXIT':
-                msg = await self.reader.get_message()
-                option = msg.data.decode('utf-8')
-                action = switcher.get(option, lambda: print('unrecognized message.'))
-
-                action()
-        except Exception as e:
-            print('Exception at SmartCoil.await_messages')
-            print(type(e))
-            print(e)
-            traceback.print_tb(e.__traceback__)
-
-
     def run_msg_handler(self):
         try:
-            self.loop.run_until_complete(self.await_messages())
-            self.notifier.stop()
-            self.msg_bus.shutdown()
-            self.loop.close()
+            switcher = {
+                        'SNSMSG': lambda x, y: self.process_new_sensor_data(),
+                        'GUIMSG': lambda x, y: self.process_new_gui_data(),
+                        'WTHMSG': lambda x, y: self.process_new_weather_data(),
+                        'SRVMSG': lambda action, params: self.process_new_alexa_data(action, params),
+                        'EXIT': lambda x, y: print('stopped awaiting messages..'),
+                        }
+
+            type = ''
+            # wait for messages until an exit message (0) is received
+            while type != 'EXIT':
+                msg = self.inbound_queue.get()
+                type = msg.type
+                action = msg.action
+                params = msg.params
+                method = switcher.get(type, lambda: print('unrecognized message.'))
+
+                method(action, params)
         except Exception as e:
             print('Exception at SmartCoil.run_msg_handler')
             print(type(e))
             print(e)
             traceback.print_tb(e.__traceback__)
+
 
     def run_msg_handler_thread(self):
         th = Thread(target=self.run_msg_handler, name='msghandler')
@@ -301,6 +311,10 @@ class SmartCoil():
             # MESSAGE HANDLING THREAD:
             # spawn thread in charge of handling messages from other classes and perform according actions.
             self.run_msg_handler_thread()
+
+            # SERVER THREAD:
+            # spawn thread in charge of running server for Amazon Alexa requests.
+            self.run_server_thread()
 
             # GUI RELATED THREADS:
             # spawn thread that checks for previous user configuration and current weather values.
