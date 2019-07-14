@@ -3,8 +3,65 @@ from waitress import serve
 import os
 from shutil import copyfile
 import json
+from datetime import datetime
 import subprocess
 from ..utils import utils
+
+class AlexaResponse():
+    def __init__(self):
+        # example: "timeOfSample": "2017-09-03T16:20:50.52Z"
+        self.body = json.loads(
+                    '''{
+                         "context": {
+                             "properties": [{
+                                 "namespace": "<placeholder>",
+                                 "name": "<placeholder>",
+                                 "value": "<placeholder>",
+                                 "timeOfSample": "<placeholder>",
+                                 "uncertaintyInMilliseconds": "50"
+                             }]
+                         },
+                         "event": {
+                             "header": "<placeholder>",
+                             "endpoint": {
+                                 "scope": {
+                                     "type": "BearerToken",
+                                     "token": "<placeholder>"
+                                 },
+                                 "endpointId": "smartcoil_id"
+                             },
+                             "payload": {}
+                         }
+                       }'''
+                       )
+
+        now = datetime.now()
+        self.body['context']['properties'][0]['timeOfSample'] = now.strftime('%Y-%m-%dT%H:%M:%S.') + str(round(now.microsecond / 10000)).zfill(2) + 'Z'
+
+    def set_namespace(self, nmspc):
+        self.body['context']['properties'][0]['namespace'] = nmspc
+
+    def set_name(self, nm):
+        self.body['context']['properties'][0]['name'] = nm
+
+    def set_value(self, val):
+        self.body['context']['properties'][0]['value'] = val
+
+    def set_header(self, hdr):
+        self.body['event']['header'] = hdr
+
+    def set_token(self, tkn):
+        self.body['event']['endpoint']['scope']['token'] = tkn
+
+    def add_property(self, prop, with_defaults = True):
+        if with_defaults:
+            prop['timeOfSample'] = self.body['context']['properties'][0]['timeOfSample']
+            prop['uncertaintyInMilliseconds'] = '50'
+        self.body['context']['properties'].append(prop)
+
+    def get_json(self):
+        return json.dumps(self.body)
+
 
 class Endpoint(object):
     def __init__(self, action):
@@ -12,7 +69,7 @@ class Endpoint(object):
 
     def __call__(self, *args):
         answer = self.action()
-        self.response = Response(answer, status=200, headers={})
+        self.response = Response(answer, status=200, mimetype='application/json')
         return self.response
 
 class ServerManager():
@@ -61,17 +118,17 @@ class ServerManager():
 
     def load_endpoints(self):
         self.add_endpoint(self.turn_smartcoil, "/turn_smartcoil")
-        self.add_endpoint(self.set_smartcoil_speed, "/set_smartcoil_speed")
         self.add_endpoint(self.set_smartcoil_temperature, "/set_smartcoil_temperature")
-        self.add_endpoint(self.get_smartcoil_speed, "/get_smartcoil_speed")
-        self.add_endpoint(self.get_smartcoil_temperature, "/get_smartcoil_temperature")
-
+        self.add_endpoint(self.set_smartcoil_speed, "/set_smartcoil_speed")
+        self.add_endpoint(self.get_smartcoil_state, "/get_smartcoil_state")
 
     def access_data_is_valid(self):
         req_data = None
 
         try:
             req_data = request.get_json()
+            # verify if incoming data contains a request element. Any exception is handled below.
+            req_data['request']
             token = req_data['token']
             if not self.token_is_valid(token):
                 print('INVALID TOKEN!')
@@ -87,32 +144,30 @@ class ServerManager():
 
     # ENDPOINTS DECLARATION:
     def turn_smartcoil(self):
-        # try:
-            data_is_valid, data, err = self.access_data_is_valid()
-            if not data_is_valid:
-                return err
-
-            switch = data['switch']
-
-            res = 'SmartCoil is now {}'.format(switch)
-            print('DEBUG:',res)
-            self.message_smartcoil('turn_smartcoil', {'value': switch})
-
-            return '{{"success": "{}"}}'.format(res)
-        # except:
-        #     return '{"error": "invalid information"}'
-
-    def set_smartcoil_speed(self):
         try:
             data_is_valid, data, err = self.access_data_is_valid()
             if not data_is_valid:
                 return err
 
-            speed = data['speed']
+            switch = data['switch']
+            request = data['request']
 
-            res = 'the speed is now {}'.format(speed)
-            print('DEBUG:',res)
-            return '{{"success": "{}"}}'.format(res)
+            dbg = 'SmartCoil is now {}'.format(switch)
+            print('DEBUG:',dbg)
+            self.message_smartcoil('SCOIL_SWTCH', {'value': switch})
+
+            res = AlexaResponse()
+            res.set_namespace('Alexa.ThermostatController')
+            res.set_name('thermostatMode')
+            res.set_value(request['directive']['payload']['thermostatMode']['value'])
+            response_header = request['directive']['header']
+            response_header['namespace'] = 'Alexa';
+            response_header['name'] = 'Response';
+            response_header['messageId'] = response_header['messageId'] + '-R';
+            res.set_header(response_header)
+            res.set_token(request['directive']['endpoint']['scope']['token'])
+
+            return res.get_json()
         except:
             return '{"error": "invalid information"}'
 
@@ -123,38 +178,95 @@ class ServerManager():
                 return err
 
             temperature = data['temperature']
+            request = data['request']
 
-            res = 'the temp is now {}'.format(temperature)
-            print('DEBUG:',res)
-            return '{{"success": "{}"}}'.format(res)
+            dbg = 'the temp is now {}'.format(temperature)
+            print('DEBUG:',dbg)
+            self.message_smartcoil('SCOIL_TEMP', {'value': temperature})
+
+            res = AlexaResponse()
+            res.set_namespace('Alexa.ThermostatController')
+            res.set_name('targetSetpoint')
+            val = temperature
+            scl = request['directive']['payload']['targetSetpoint']['scale']
+            res.set_value({'value': val, 'scale': scl})
+            response_header = request['directive']['header']
+            response_header['namespace'] = 'Alexa';
+            response_header['name'] = 'Response';
+            response_header['messageId'] = response_header['messageId'] + '-R';
+            res.set_header(response_header)
+            res.set_token(request['directive']['endpoint']['scope']['token'])
+            return res.get_json()
         except:
             return '{"error": "invalid information"}'
 
-    def get_smartcoil_speed(self):
+    def set_smartcoil_speed(self):
         try:
             data_is_valid, data, err = self.access_data_is_valid()
             if not data_is_valid:
                 return err
 
-            speed = 5 # get speed from smartcoil..
+            speed = data['speed']
+            request = data['request']
 
-            res = 'current smartcoil speed is {}'.format(speed)
-            print('DEBUG:',res)
-            return '{{"success": "speed fetched", "speed": {}}}'.format(speed)
+            dbg = 'the speed is now {}'.format(speed)
+            print('DEBUG:',dbg)
+
+
+            res = AlexaResponse()
+            res.set_namespace('Alexa.RangeController')
+            res.set_name('rangeValue')
+            res.set_value(speed)
+            response_header = request['directive']['header']
+            response_header['namespace'] = 'Alexa';
+            response_header['name'] = 'Response';
+            response_header['messageId'] = response_header['messageId'] + '-R';
+            res.set_header(response_header)
+            res.set_token(request['directive']['endpoint']['scope']['token'])
+            return res.get_json()
         except:
             return '{"error": "invalid information"}'
 
-    def get_smartcoil_temperature(self):
+    def get_smartcoil_state(self):
         try:
             data_is_valid, data, err = self.access_data_is_valid()
             if not data_is_valid:
                 return err
 
-            temp = 100 # get temperature from smartcoil..
+            temperature = 123 # get temperature from smartcoil sensor...
+            request = data['request']
 
-            res = 'current smartcoil temperature is {}'.format(speed)
-            print('DEBUG:',res)
-            return '{{"success": "temperature fetched", "speed": {}}}'.format(speed)
+            dbg = 'current smartcoil temperature is {}'.format(temperature)
+            print('DEBUG:',dbg)
+
+            res = AlexaResponse()
+            res.set_namespace('Alexa.TemperatureSensor')
+            res.set_name('temperature')
+            val = temperature
+            scl = 'FAHRENHEIT'
+            res.set_value({'value': val, 'scale': scl})
+            response_header = request['directive']['header']
+            response_header['namespace'] = 'Alexa';
+            response_header['name'] = 'StateReport';
+            response_header['messageId'] = response_header['messageId'] + '-R';
+            res.set_header(response_header)
+            res.set_token(request['directive']['endpoint']['scope']['token'])
+
+            prop = {
+                'namespace': 'Alexa.RangeController',
+                'name': 'rangeValue',
+                'value': {'value': 1} # get fan speed from smartcoil...
+                }
+            res.add_property(prop)
+
+            prop = {
+                'namespace': 'Alexa.ThermostatController',
+                'name': 'targetSetpoint',
+                'value': {'value': 22, 'scale': 'FAHRENHEIT'} # get target temperature from smartcoil GUI...
+                }
+            res.add_property(prop)
+
+            return res.get_json()
         except:
             return '{"error": "invalid information"}'
 

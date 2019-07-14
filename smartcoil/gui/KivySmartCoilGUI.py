@@ -88,6 +88,7 @@ class GUIWidget(BoxLayout):
         self.outbound_queue = outqueue
         self.speed = 1
         self.speed_changed = False
+        self.last_usr_spd_seen = 1
         self.last_usr_tmp_seen = int(self.ids.c_sldr.value)
 
     def on_touch_move(self, touch):
@@ -141,6 +142,9 @@ class GUIWidget(BoxLayout):
     def get_user_speed(self):
         return self.speed
 
+    def get_last_speed_seen(self):
+        return self.last_usr_spd_seen
+
     def get_speed_changed_flag(self):
         return self.speed_changed
 
@@ -149,6 +153,9 @@ class GUIWidget(BoxLayout):
 
     def set_user_speed(self, speed):
         self.speed = speed
+        self.speed_changed = True
+        if speed > 0:
+            self.last_usr_spd_seen = speed
 
         off = self.ids.off_button
         lo = self.ids.lo_button
@@ -163,16 +170,19 @@ class GUIWidget(BoxLayout):
 
     def fancoil_on_lo(self):
         self.speed = 1
+        self.last_usr_spd_seen = 1
         self.speed_changed = True
         self.outbound_queue.put(utils.Message('GUIMSG'))
 
     def fancoil_on_mi(self):
         self.speed = 2
+        self.last_usr_spd_seen = 2
         self.speed_changed = True
         self.outbound_queue.put(utils.Message('GUIMSG'))
 
     def fancoil_on_hi(self):
         self.speed = 3
+        self.last_usr_spd_seen = 3
         self.speed_changed = True
         self.outbound_queue.put(utils.Message('GUIMSG'))
 

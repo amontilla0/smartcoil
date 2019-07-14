@@ -216,9 +216,23 @@ class SmartCoil():
         if fancoil_state_changed:
             self.commit_sensor_data()
 
-    # TODO: implement method...
+    def alexa_switch_smartcoil(self, switch):
+        speed = 0
+        if switch == 'on':
+            speed = self.gui.root.get_last_speed_seen()
+
+        self.gui.root.set_user_speed(speed)
+
     def process_new_alexa_data(self, action, params):
-        pass
+        switcher = {
+                    'SCOIL_SWTCH': lambda switch: self.alexa_switch_smartcoil(switch),
+                    'SCOIL_TEMP': lambda temp: self.alexa_chg_smartcoil_temperature(temp),
+                    'SCOIL_SPEED': lambda speed: self.alexa_chg_smartcoil_speed(speed),
+                    'SCOIL_STATE': lambda x: self.alexa_get_smartcoil_state(),
+                    }
+
+        method = switcher.get(action, lambda: print('unrecognized Alexa action.'))
+        method(params['value'])
 
     def quit(self, signo, _frame):
         print('cleaning up before exiting app...')
