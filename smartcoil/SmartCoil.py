@@ -14,8 +14,8 @@ import os
 from shutil import copyfile
 import traceback
 
-HEATING = 1
-COOLING = 2
+HEATING = 'HEAT'
+COOLING = 'COOL'
 
 class SmartCoil():
     def __init__(self):
@@ -95,6 +95,7 @@ class SmartCoil():
 
     def run_server_thread(self):
         th = Thread(target=self.run_server, name='AlexaRequestsServer')
+        th.daemon = True
         th.start()
 
     def run_gui(self):
@@ -213,6 +214,7 @@ class SmartCoil():
 
         # If adjusting the user temperature changes the fancoil state, report it to DB.
         fancoil_state_changed = prev_state != curr_state
+
         if fancoil_state_changed:
             self.commit_sensor_data()
 
@@ -222,6 +224,27 @@ class SmartCoil():
             speed = self.gui.root.get_last_speed_seen()
 
         self.gui.root.set_user_speed(speed)
+        # take advantage of the GUI processing method, since this case is similar.
+        self.process_new_gui_data()
+
+    def alexa_chg_smartcoil_temperature(self, temperature):
+        self.gui.root.set_user_temp(temperature)
+        # take advantage of the GUI processing method, since this case is similar.
+        self.process_new_gui_data()
+
+    def alexa_chg_smartcoil_speed(self, speed):
+        self.gui.root.set_user_speed(speed)
+        # take advantage of the GUI processing method, since this case is similar.
+        self.process_new_gui_data()
+
+    def alexa_get_smartcoil_state(self):
+        state = 'OFF' if self.gui.root.user_turned_off_fancoil() else self.mode
+        speed = self.gui.root.get_last_speed_seen()
+        cur_temp = round(self.get_current_temp())
+        usr_temp = self.gui.root.get_user_temp()
+        info = {'state': state, 'speed': speed, 'cur_temp': cur_temp, 'usr_temp': usr_temp}
+        self.outbound_queue.put(utils.Message('APPMSG', 'SCOIL_STATE-R', info))
+
 
     def process_new_alexa_data(self, action, params):
         switcher = {
@@ -232,16 +255,14 @@ class SmartCoil():
                     }
 
         method = switcher.get(action, lambda: print('unrecognized Alexa action.'))
-        method(params['value'])
+        method(params.get('value', None))
 
     def quit(self, signo, _frame):
         print('cleaning up before exiting app...')
         self.exit.set()
         self.rc.cleanup()
-
         # Once terminated, report the app is down to the DB
         self.report_app_status_to_db('OFF')
-
         exit(0)
 
     def run_msg_handler(self):

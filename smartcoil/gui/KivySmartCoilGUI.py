@@ -135,6 +135,7 @@ class GUIWidget(BoxLayout):
 
     def set_user_temp(self, temp):
         self.c_sldr.value = temp
+        self.ids.c_sldr.set_color()
 
     def user_turned_off_fancoil(self):
         return self.speed == 0

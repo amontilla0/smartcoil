@@ -139,7 +139,7 @@ class ServerManager():
 
         return (True, req_data, None)
 
-    def message_smartcoil(self, action, params):
+    def message_smartcoil(self, action, params = {}):
         self.outbound_queue.put(utils.Message('SRVMSG', action, params))
 
     # ENDPOINTS DECLARATION:
@@ -211,7 +211,7 @@ class ServerManager():
 
             dbg = 'the speed is now {}'.format(speed)
             print('DEBUG:',dbg)
-
+            self.message_smartcoil('SCOIL_SPEED', {'value': speed})
 
             res = AlexaResponse()
             res.set_namespace('Alexa.RangeController')
@@ -233,18 +233,31 @@ class ServerManager():
             if not data_is_valid:
                 return err
 
-            temperature = 123 # get temperature from smartcoil sensor...
             request = data['request']
 
-            dbg = 'current smartcoil temperature is {}'.format(temperature)
+            self.message_smartcoil('SCOIL_STATE')
+
+            msg = self.inbound_queue.get()
+            type = msg.type
+            action = msg.action
+            info = msg.params
+
+            dbg = 'Current state is:\nstate: {}, speed: {}, thermostat temp: {}, AC temp set to: {}'.format(
+                info['state'], info['speed'], info['cur_temp'], info['usr_temp']
+            )
             print('DEBUG:',dbg)
 
+            if type == 'APPMSG' and action == 'SCOIL_STATE-R':
+                pass
+            else:
+                print('unrecognized App action.')
+                return '{"error": "invalid information"}'
+
             res = AlexaResponse()
-            res.set_namespace('Alexa.TemperatureSensor')
-            res.set_name('temperature')
-            val = temperature
-            scl = 'FAHRENHEIT'
-            res.set_value({'value': val, 'scale': scl})
+            res.set_namespace('Alexa.ThermostatController')
+            res.set_name('targetSetpoint')
+            val = info['usr_temp']
+            res.set_value({'value': val, 'scale': 'FAHRENHEIT'})
             response_header = request['directive']['header']
             response_header['namespace'] = 'Alexa';
             response_header['name'] = 'StateReport';
@@ -255,14 +268,21 @@ class ServerManager():
             prop = {
                 'namespace': 'Alexa.RangeController',
                 'name': 'rangeValue',
-                'value': {'value': 1} # get fan speed from smartcoil...
+                'value': {'value': info['speed']}
+                }
+            res.add_property(prop)
+
+            prop = {
+                'namespace': 'Alexa.TemperatureSensor',
+                'name': 'temperature',
+                'value': {'value': info['cur_temp'], 'scale': 'FAHRENHEIT'}
                 }
             res.add_property(prop)
 
             prop = {
                 'namespace': 'Alexa.ThermostatController',
                 'name': 'targetSetpoint',
-                'value': {'value': 22, 'scale': 'FAHRENHEIT'} # get target temperature from smartcoil GUI...
+                'value': {'value': info['usr_temp'], 'scale': 'FAHRENHEIT'}
                 }
             res.add_property(prop)
 
