@@ -1,5 +1,4 @@
 import os
-os.environ["KIVY_NO_CONSOLELOG"] = "1"
 import traceback
 from functools import wraps
 
@@ -123,7 +122,7 @@ class GUIWidget(BoxLayout):
 
     def updateTodayIcon(self, src):
         try:
-            self.tod_icon.source = src
+            self.tod_icon.source = 'https://api.met.no/weatherapi/weathericon/1.1?content_type=image%2Fpng&is_night=0&symbol=3'
         except Exception as e:
             print('Exception at GUIWidget.updateTodayIcon')
             print(type(e))

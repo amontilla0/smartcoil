@@ -3,7 +3,20 @@ import time
 from ..utils import utils
 
 class SensorData:
+    '''Serves as the module that periodically fetches information from the BME680 sensor.'''
+
     def __init__(self, outqueue = None, burn_time = 300):
+        '''The module is intented to be a secondary thread of the base class SmartCoil.
+        To allow communication between the main thread and this thread, a Queue can be passed
+        as an argument.
+        Additionally, the BME680 needs a period of burning time to prime the gas sensor and read
+        accurate air quality values. A specific amount of time to prime the gas sensor can be passed
+        as an argument too.
+
+        Args:
+            outqueue (Queue): Optional utbound queue to send messages to the main thread.
+            burn_time (int): Time in seconds to allow the sensor to burn before sending accurate readings. Defaults to 5 minutes.
+        '''
         try:
             self.outbound_queue = outqueue
             self.sensor = bme680.BME680(bme680.I2C_ADDR_PRIMARY)
@@ -48,6 +61,9 @@ class SensorData:
         self.hum_weighting = 0.25
 
     def build_gas_baseline(self):
+        ''' Primes the gas sensor based on the specified burning time in seconds.
+        Once the time has passed, the gas baseline is built and the gas readings are ready to be used.
+        '''
         if self.sensor_ready(): return
 
         if self.curr_time - self.start_time < self.burn_in_time:
@@ -63,9 +79,20 @@ class SensorData:
 
     # Checks if the gas baseline is already initialized, a process that takes 5 minutes of initial readings to happen.
     def sensor_ready(self):
+        '''Verifies if the gas baseline has been built already (after consuming the specified burning time).
+
+        Returns:
+            bool: Whether the gas baseline was built or not.
+        '''
         return self.gas_baseline is not None
 
     def calc_air_quality(self):
+        '''Calculates the air quality based on readings processing data from gas and humidity sensors.
+
+        Returns:
+            object: Mutable value, either the character '-' if the gas baseline is still not built,
+                or a float representing the indoor air quality percentage
+        '''
         air_quality_score = '-'
 
         if  self.sensor_ready() and self.sensor.data.heat_stable:
@@ -97,6 +124,20 @@ class SensorData:
         return air_quality_score
 
     def get_most_recent_readings(self, temp_in_f = True):
+        '''Gets the most recent values fetched from the BME680 sensor, these values are:
+        - temperature
+        - pressure
+        - humidity
+        - gas resistance
+        - air quality
+
+        Args:
+            temp_in_f (bool): Specifies if the temperature must be specified in Fahrenheit. Defaults to True.
+
+        Returns:
+            list: A list with values fetched from the BME680 sensor, in the following order:
+                temperature, pressure, humidity, gas resistance, air quality
+        '''
         if not self.sensor_ready(): return None
 
         temp = self.sensor.data.temperature
@@ -110,6 +151,13 @@ class SensorData:
         return [temp, pres, humi, gas_res, airq]
 
     def run_sensor(self, verbose = False, exit_evt = None, temp_in_f = True):
+        '''The main loop that constantly fetches information from the BME680 sensor.
+
+        Args:
+            verbose (bool): Whether using this method should print the readings every second to STDOUT.
+            exit_evt (Event): An optional event flag to manage sensor cleaning before exiting the full app.
+            temp_in_f (bool): Specifies if the temperature must be specified in Fahrenheit. Defaults to True.
+        '''
         sleep_func = time.sleep if exit_evt == None else exit_evt.wait
 
         temp = self.sensor.data.temperature
