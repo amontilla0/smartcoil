@@ -3,7 +3,7 @@ import time
 from ..utils import utils
 
 class SensorData:
-    '''Serves as the module that periodically fetches information from the BME680 sensor.'''
+    '''Serves as the class that periodically fetches information from the BME680 sensor.'''
 
     def __init__(self, outqueue = None, burn_time = 300):
         '''The module is intented to be a secondary thread of the base class SmartCoil.
@@ -14,7 +14,7 @@ class SensorData:
         as an argument too.
 
         Args:
-            outqueue (Queue): Optional utbound queue to send messages to the main thread.
+            outqueue (:obj:`Queue`, optional): Outbound queue to send messages to the main thread.
             burn_time (int): Time in seconds to allow the sensor to burn before sending accurate readings. Defaults to 5 minutes.
         '''
         try:
@@ -90,10 +90,10 @@ class SensorData:
         '''Calculates the air quality based on readings processing data from gas and humidity sensors.
 
         Returns:
-            object: Mutable value, either the character '-' if the gas baseline is still not built,
-                or a float representing the indoor air quality percentage
+            int: Either -1 if the gas baseline is still not built,
+                or a float representing the indoor air quality percentage.
         '''
-        air_quality_score = '-'
+        air_quality_score = -1
 
         if  self.sensor_ready() and self.sensor.data.heat_stable:
             gas = self.sensor.data.gas_resistance
@@ -132,7 +132,7 @@ class SensorData:
         - air quality
 
         Args:
-            temp_in_f (bool): Specifies if the temperature must be specified in Fahrenheit. Defaults to True.
+            temp_in_f (bool, optional): Specifies if the temperature must be specified in Fahrenheit. Defaults to True.
 
         Returns:
             list: A list with values fetched from the BME680 sensor, in the following order:
@@ -147,6 +147,7 @@ class SensorData:
         humi = self.sensor.data.humidity
         gas_res = self.sensor.data.gas_resistance
         airq = self.calc_air_quality()
+        airq = '-' if airq < 0 else airq
 
         return [temp, pres, humi, gas_res, airq]
 
@@ -154,9 +155,9 @@ class SensorData:
         '''The main loop that constantly fetches information from the BME680 sensor.
 
         Args:
-            verbose (bool): Whether using this method should print the readings every second to STDOUT.
-            exit_evt (Event): An optional event flag to manage sensor cleaning before exiting the full app.
-            temp_in_f (bool): Specifies if the temperature must be specified in Fahrenheit. Defaults to True.
+            verbose (bool, optional): Whether using this method should print the readings every second to STDOUT.
+            exit_evt (:obj:`Event`, optional): Event flag to manage sensor cleaning before exiting the full app.
+            temp_in_f (bool, optional): Specifies if the temperature must be specified in Fahrenheit. Defaults to True.
         '''
         sleep_func = time.sleep if exit_evt == None else exit_evt.wait
 
@@ -169,8 +170,7 @@ class SensorData:
         pres = int(self.sensor.data.pressure)
         humi = int(self.sensor.data.humidity)
         airq = self.calc_air_quality()
-        if airq != '-':
-            airq = int(airq)
+        airq = '-' if airq < 0 else int(airq)
 
         while True if exit_evt == None else not exit_evt.is_set():
             new_temp = self.sensor.data.temperature
@@ -183,8 +183,7 @@ class SensorData:
             new_pres = int(self.sensor.data.pressure)
             new_humi = int(self.sensor.data.humidity)
             new_airq = self.calc_air_quality()
-            if new_airq != '-':
-                new_airq = int(new_airq)
+            new_airq = '-' if new_airq < 0 else int(new_airq)
 
             # temperature offset in celcius after monitoring and comparing aginst another thermometer.
             self.sensor.set_temp_offset(-1.9)

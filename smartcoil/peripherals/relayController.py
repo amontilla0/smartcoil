@@ -10,22 +10,33 @@ fanlo = 1
 fanmi = 2
 fanhi = 3
 
-# For this project, I use a 4 relay module to control a decades-old Fan Coil Unit (FCU).
-# All GPIO pins below follow BCM numbering.
-# Relay 1 makes use of pin 17 and controls the valve.
-# Relay 2 makes use of pin pin 22 and controls the fan's low speed.
-# Relay 3 is controlled by pin 23 and controls the fan's mid speed.
-# Relay 4 is controlled by pin 27 and controls the fan's high speed.
 class RelayController():
+    '''Serves as the class that controls the 4-channel relay module that deals directly with the
+    Fan Coil Unit (FCU).
+
+    For this project, I use a 4 relay module to control a decades-old FCU.
+    All GPIO pins below follow BCM numbering.
+    - Relay 1 makes use of pin 17 and controls the valve.
+    - Relay 2 makes use of pin pin 22 and controls the fan's low speed.
+    - Relay 3 is controlled by pin 23 and controls the fan's mid speed.
+    - Relay 4 is controlled by pin 27 and controls the fan's high speed.'''
     def __init__(self):
+        '''The module is intented to be a secondary thread of the base class SmartCoil.
+        '''
         self.relays = [17,22,23,27]
         self.RELAYS_COUNT = len(self.relays)
         self.init()
 
-    # Sets the value for a given relay.
-    # rel - the desired relay to control, values go from 0 to 3.
-    # value - either True to turn on a signal, or False for the opposite
     def set_relay_to(self, rel, value):
+        '''Sets the value for a given relay.
+        # rel - the desired relay to control, values go from 0 to 3.
+        # value - either True to turn on a signal, or False for the opposite
+
+        Args:
+            rel (int): The desired relay to control, values go from 0 to 3.
+            value (bool): Either True to turn on a signal, or False for the opposite.
+        '''
+
         GPIO.output(self.relays[rel],value)
 
     # Turns the fancoil on or off.
