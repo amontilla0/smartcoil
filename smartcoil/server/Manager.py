@@ -142,6 +142,9 @@ class ServerManager():
     def message_smartcoil(self, action, params = {}):
         self.outbound_queue.put(utils.Message('SRVMSG', action, params))
 
+    def debug(self, dbg_msg):
+        print('[{}] DEBUG: {}'.format(datetime.now(), dbg_msg))
+
     # ENDPOINTS DECLARATION:
     def turn_smartcoil(self):
         try:
@@ -153,7 +156,7 @@ class ServerManager():
             request = data['request']
 
             dbg = 'SmartCoil is now {}'.format(switch)
-            print('DEBUG:',dbg)
+            self.debug(dbg)
             self.message_smartcoil('SCOIL_SWTCH', {'value': switch})
 
             res = AlexaResponse()
@@ -181,7 +184,7 @@ class ServerManager():
             request = data['request']
 
             dbg = 'the temp is now {}'.format(temperature)
-            print('DEBUG:',dbg)
+            self.debug(dbg)
             self.message_smartcoil('SCOIL_TEMP', {'value': temperature})
 
             res = AlexaResponse()
@@ -210,7 +213,7 @@ class ServerManager():
             request = data['request']
 
             dbg = 'the speed is now {}'.format(speed)
-            print('DEBUG:',dbg)
+            self.debug(dbg)
             self.message_smartcoil('SCOIL_SPEED', {'value': speed})
 
             res = AlexaResponse()
@@ -242,16 +245,14 @@ class ServerManager():
             action = msg.action
             info = msg.params
 
+            if not (type == 'APPMSG' and action == 'SCOIL_STATE-R'):
+                print('unrecognized App action.')
+                return '{"error": "invalid information"}'
+
             dbg = 'Current state is:\nstate: {}, speed: {}, thermostat temp: {}, AC temp set to: {}'.format(
                 info['state'], info['speed'], info['cur_temp'], info['usr_temp']
             )
-            print('DEBUG:',dbg)
-
-            if type == 'APPMSG' and action == 'SCOIL_STATE-R':
-                pass
-            else:
-                print('unrecognized App action.')
-                return '{"error": "invalid information"}'
+            self.debug(dbg)
 
             res = AlexaResponse()
             res.set_namespace('Alexa.ThermostatController')
