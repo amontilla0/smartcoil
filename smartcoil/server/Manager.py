@@ -269,7 +269,7 @@ class ServerManager():
             prop = {
                 'namespace': 'Alexa.RangeController',
                 'name': 'rangeValue',
-                'value': {'value': info['speed']}
+                'value': info['speed']
                 }
             res.add_property(prop)
 
@@ -282,8 +282,8 @@ class ServerManager():
 
             prop = {
                 'namespace': 'Alexa.ThermostatController',
-                'name': 'targetSetpoint',
-                'value': {'value': info['usr_temp'], 'scale': 'FAHRENHEIT'}
+                'name': 'thermostatMode',
+                'value': info['state']
                 }
             res.add_property(prop)
 
