@@ -6,7 +6,18 @@ import time
 from ..utils import utils
 
 class WeatherData:
+    '''Serves as the class that periodically fetches information from the norwegian weather API.'''
+
     def __init__(self, outqueue = None, temp_in_f = True):
+        '''The module is intented to be a secondary thread of the base class SmartCoil.
+        To allow communication between the main thread and this thread, a Queue can be passed
+        as an argument.
+
+        Args:
+            outqueue (:obj:`Queue`, optional): Outbound queue to send messages to the main thread.
+            temp_in_f (boolean, optional): Whether to transform all temperature values from celcius
+                                           to fahrenheit. Defaults to True.
+        '''
         self.outbound_queue = outqueue
         self.temp_in_f = temp_in_f
         self.update_values()
