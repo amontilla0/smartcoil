@@ -10,6 +10,12 @@ from ..utils import utils
 class AlexaResponse():
     '''Subclass that builds up the JSON responses for the Alexa Smart Home lambda function.'''
     def __init__(self):
+        '''This class initializes a base string to serve as a placeholder for different messages
+        to be sent to Alexa. The controllers used by the SmartCoil Alexa Skill are:
+        - ThermostatController (controls the smartcoil by turning it on or off).
+        - TemperatureSensor (reads indoor temperature).
+        - RangeController (controls fan speed).
+        '''
         # example: "timeOfSample": "2017-09-03T16:20:50.52Z"
         self.body = json.loads(
                     '''{
