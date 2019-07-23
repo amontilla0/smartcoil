@@ -32,7 +32,7 @@ while True:
         print('*LISTENING MOCK*')
         continue
 
-    state = 'ON'
+    state = 'COOL'
     speed = 3
     cur_temp = 100
     usr_temp = 69

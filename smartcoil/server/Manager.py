@@ -270,6 +270,7 @@ class ServerManager():
             prop = {
                 'namespace': 'Alexa.RangeController',
                 'name': 'rangeValue',
+                'instance': 'Fancoil.Speed',
                 'value': info['speed']
                 }
             res.add_property(prop)
