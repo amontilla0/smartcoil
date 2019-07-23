@@ -48,6 +48,13 @@ class CircularSlider(Slider):
     hot_color  = ListProperty([.99765, .33333, 0])
 
     def linear_coords(self, base_x, handle_size):
+        '''Helper method to get coordinates in a semi circle based on a linear value (x).
+        Args:
+            base_x (double): The input x coordinate, basically the x value where the cursor (or finger is placed).
+            handle_size (double): the radius of the slider handle, taken in account for final coordinates adjustment.
+        Returns:
+            :obj:`tuple`: (x, y) coordinates where the slider should be rendered as a semi-circle trajectory.
+        '''
         radius = ((min(self.size[0], self.size[1]) - self.thickness / 2) /2)
         #center of circle, angle in degree and radius of circle
         center = (self.center_x - 5 - handle_size / 2, self.center_y + 5 - handle_size / 2)
