@@ -8,6 +8,7 @@ import subprocess
 from ..utils import utils
 
 class AlexaResponse():
+    '''Subclass that builds up the JSON responses for the Alexa Smart Home lambda function.'''
     def __init__(self):
         # example: "timeOfSample": "2017-09-03T16:20:50.52Z"
         self.body = json.loads(
