@@ -23,6 +23,19 @@ class WeatherData:
         self.update_values()
 
     def update_values(self):
+        '''Method to get all weather information from the API into this class attributes.
+        All the data taken from the service is:
+        - Current outdoor temperature (originally in celcius).
+        - Wind direction in degrees.
+        - Wind direction name in cardinal points abbreviation.
+        - Wind speed (originally in meters per second, translated to KMh).
+        - Current humidity percentage.
+        - Current pressure in hPa.
+        - Precipitation forecast in mm.
+        - Forecast condition name, such as 'PartCloud'
+        - A related forecast condition code.
+        - Forecast condition icon.
+        '''
         w = self.get_weather()
         f = w.forecast()
 
@@ -57,6 +70,13 @@ class WeatherData:
         self.weather_icon = 'https://api.met.no/weatherapi/weathericon/1.1?content_type=image%2Fpng&is_night={}&symbol={}'.format(is_night, self.condition_code)
 
     def retry_update_values(self, exit_evt = None):
+        '''Helper method that retries getting data from the API and catches any server errors.
+
+        Args:
+            exit_evt (:obj:`Event`, optional): Event flag to manage thread cleaning before exiting the full app.
+        Returns:
+            bool: Wether the method had to try more than once to get information from the weather API.
+        '''
         sleep_func = time.sleep if exit_evt == None else exit_evt.wait
         retried = False
 
@@ -74,14 +94,41 @@ class WeatherData:
         return retried
 
     def get_conditions_text(self):
+        ''' Method to get all fetched information in a human readable string.
+
+        Returns:
+            :obj:`str`: human readable text showing almost all the information gotten from the API.
+        '''
         temp_units = 'F' if self.temp_in_f else 'C'
         return '''temperature is {0:.1f} °{1} with humidity of {2:.0f}% and pressure of {3:.1f} hPa. General conditions are {4}
 Wind is {5:.1f} Km/h {6} and we have an expected precipitation of {6} millimeters.'''.format(self.temperature, temp_units, self.humidity, self.pressure, self.condition, self.wind_speed, self.wind_dir_name, self.precipitation)
 
     def get_conditions_data(self):
+        '''Helper method to get all informational attributes from this class.
+        Returns:
+            :obj:`list`: array of data fetched from the API (and location service) in the following order:
+            - Latitude.
+            - Longitude.
+            - Temperature.
+            - Humidity.
+            - Pressure.
+            - Condition name.
+            - Condition code.
+            - Wind speed.
+            - Wind direction name.
+            - Wind direction degrees.
+            - Precipitation.
+        '''
         return [self.lat, self.lon, self.temperature, self.humidity, self.pressure, self.condition, self.condition_code, self.wind_speed, self.wind_dir_name, self.wind_dir_degs, self.precipitation]
 
     def _get_geolocation(self, api_key):
+        '''Helper method to get the current geolocation of the device based on its public IP address.
+
+        Agrs:
+            api_key (:obj:`str`): The key to use with the geolocation API (api.ipstack.com/).
+        Returns:
+            :obj:`tuple`: The latitude and longitude for this device's public IP.
+        '''
         my_ip = urlopen('http://ip.42.pl/raw').read().decode('utf-8')
         baseurl = 'http://api.ipstack.com/{}?access_key={}'.format(my_ip, api_key)
 
@@ -95,12 +142,23 @@ Wind is {5:.1f} Km/h {6} and we have an expected precipitation of {6} millimeter
         return (self.lat, self.lon)
 
     def get_weather(self):
+        '''Gets the object from the weather API library based on a given latitude and longitude.
+
+        Returns:
+            :obj:`tuple`: An instance of Yr from the yr.no library (weather API).'''
         geo = self._get_geolocation('ba8e737cd1ce0e3bf0ede0cd1caeea68')
         weather = Yr(location_xyz=(geo[1], geo[0], 0))
 
         return weather
 
     def run_updates(self, exit_evt = None):
+        '''The main loop that constantly fetches information from the weather API. More specifically,
+        this method gets information from the weather API on periods of multiples of 5 minutes.
+        Example: 7:00pm, 7:05pm, 7:10pm, and so on.
+
+        Args:
+            exit_evt (:obj:`Event`, optional): Event flag to manage thread cleaning before exiting the full app.
+        '''
         sleep_func = time.sleep if exit_evt == None else exit_evt.wait
         weatherUpdated = False
         last_updated_minute = -1
