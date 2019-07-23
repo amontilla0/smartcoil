@@ -22,6 +22,9 @@ from math import cos, sin, pi, sqrt
 from ..utils import utils
 
 class CircularSlider(Slider):
+    '''Subclass that handles all interaction with the circular slider that sets the target temperature
+    for the Smartcoil.
+    '''
     circ_slider = ObjectProperty(None)
     tmpture_txt = ObjectProperty(None)
     thickness = NumericProperty(5)
