@@ -18,6 +18,8 @@ HEATING = 'HEAT'
 COOLING = 'COOL'
 
 class SmartCoil():
+    '''Serves as the main class that orchestrates communication between components (peripherals, GUI and APIs).'''
+    
     def __init__(self):
         try:
             # preparation of queues that will manage messages between threads.
