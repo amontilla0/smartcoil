@@ -46,18 +46,38 @@ class AlexaResponse():
         self.body['context']['properties'][0]['timeOfSample'] = now.strftime('%Y-%m-%dT%H:%M:%S.') + str(round(now.microsecond / 10000)).zfill(2) + 'Z'
 
     def set_namespace(self, nmspc):
+        '''Helper method to set the namespace of the first property in the Response message.
+        Args:
+            nmspc (:obj:`str`): Namespace to set for the first property.
+        '''
         self.body['context']['properties'][0]['namespace'] = nmspc
 
     def set_name(self, nm):
+        '''Helper method to set the name of the first property in the Response message.
+        Args:
+            nm (:obj:`str`): Name to set for the first property.
+        '''
         self.body['context']['properties'][0]['name'] = nm
 
     def set_value(self, val):
+        '''Helper method to set the value of the first property in the Response message.
+        Args:
+            val (object): This could be either a simple string or a dictionary that will be translated to a JSON sub-object.
+        '''
         self.body['context']['properties'][0]['value'] = val
 
     def set_header(self, hdr):
+        '''Helper method to set the header of the Response message.
+        Args:
+            hdr (object): Usually a dictionary that will be translated into a JSON sub-object.
+        '''
         self.body['event']['header'] = hdr
 
     def set_token(self, tkn):
+        '''Helper method to set the token of the Response message.
+        Args:
+            tkn (:obj:`str`): The same token that was provided by the incoming Alexa request.
+        '''
         self.body['event']['endpoint']['scope']['token'] = tkn
 
     def add_property(self, prop, with_defaults = True):
@@ -111,8 +131,8 @@ class ServerManager():
     def run_tunnel(self):
         dirname = os.path.dirname(__file__)
         pagekite_path = os.path.join(dirname, 'pagekite.py')
-
-        tunnel = subprocess.Popen(['python2', pagekite_path, str(self.tunnel_port), self.tunnel_address], stdout=subprocess.PIPE)
+        logfile = open(os.path.join(dirname, '../../assets/logs/pagekite.log'), 'a+')
+        tunnel = subprocess.Popen(['python2', pagekite_path, str(self.tunnel_port), self.tunnel_address], stdout=logfile)
         print(tunnel)
 
     def token_is_valid(self, tok):
