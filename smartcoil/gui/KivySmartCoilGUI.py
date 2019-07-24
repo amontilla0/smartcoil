@@ -66,6 +66,12 @@ class CircularSlider(Slider):
         return (x, y)
 
     def trajectory_mapping(self, base_x):
+        '''Helper method to get the angle to use for the semi-circle coordinates.
+        Args:
+            base_x (double): The input x coordinate, basically the x value where the cursor (or finger is placed).
+        Returns:
+            double: the resulting angle in the slider semi-circle, based on the input x coordinate.
+        '''
         m = 240 / (self.right - self.x)
         # the -90 is for axis adjustment
         y = m * (base_x - self.x) + (-120) - 90
