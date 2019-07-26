@@ -8,13 +8,15 @@ import subprocess
 from ..utils import utils
 
 class AlexaResponse():
-    '''Subclass that builds up the JSON responses for the Alexa Smart Home lambda function.'''
+    '''Subclass that builds up the JSON responses for the Alexa Smart Home
+    lambda function.'''
     def __init__(self):
-        '''This class initializes a base string to serve as a placeholder for different messages
-        to be sent to Alexa. The controllers used by the SmartCoil Alexa Skill are:
-        - ThermostatController (controls the smartcoil by turning it on or off).
-        - TemperatureSensor (reads indoor temperature).
-        - RangeController (controls fan speed).
+        '''This class initializes a base string to serve as a placeholder for
+        different messages to be sent to Alexa. The controllers used by the
+        SmartCoil Alexa Skill are:
+            - ThermostatController (turns the smartcoil on or off).
+            - TemperatureSensor (reads indoor temperature).
+            - RangeController (controls fan speed).
         '''
         # example: "timeOfSample": "2017-09-03T16:20:50.52Z"
         self.body = json.loads(
@@ -43,46 +45,68 @@ class AlexaResponse():
                        )
 
         now = datetime.now()
-        self.body['context']['properties'][0]['timeOfSample'] = now.strftime('%Y-%m-%dT%H:%M:%S.') + str(round(now.microsecond / 10000)).zfill(2) + 'Z'
+        self.body['context']['properties'][0]['timeOfSample'] = (
+                            now.strftime('%Y-%m-%dT%H:%M:%S.') +
+                            str(round(now.microsecond / 10000)).zfill(2) + 'Z')
 
     def set_namespace(self, nmspc):
-        '''Helper method to set the namespace of the first property in the Response message.
+        '''Helper method to set the namespace of the first property in the
+        Response message.
+
         Args:
             nmspc (:obj:`str`): Namespace to set for the first property.
         '''
         self.body['context']['properties'][0]['namespace'] = nmspc
 
     def set_name(self, nm):
-        '''Helper method to set the name of the first property in the Response message.
+        '''Helper method to set the name of the first property in the Response  
+        message.
+
         Args:
             nm (:obj:`str`): Name to set for the first property.
         '''
         self.body['context']['properties'][0]['name'] = nm
 
     def set_value(self, val):
-        '''Helper method to set the value of the first property in the Response message.
+        '''Helper method to set the value of the first property in the Response
+        message.
+
         Args:
-            val (object): This could be either a simple string or a dictionary that will be translated to a JSON sub-object.
+            val (object): This could be either a simple string or a dictionary
+                that will be translated to a JSON sub-object.
         '''
         self.body['context']['properties'][0]['value'] = val
 
     def set_header(self, hdr):
         '''Helper method to set the header of the Response message.
         Args:
-            hdr (object): Usually a dictionary that will be translated into a JSON sub-object.
+            hdr (object): Usually a dictionary that will be translated into
+                a JSON sub-object.
         '''
         self.body['event']['header'] = hdr
 
     def set_token(self, tkn):
         '''Helper method to set the token of the Response message.
         Args:
-            tkn (:obj:`str`): The same token that was provided by the incoming Alexa request.
+            tkn (:obj:`str`): The same token that was provided by the incoming
+                Alexa request.
         '''
         self.body['event']['endpoint']['scope']['token'] = tkn
 
     def add_property(self, prop, with_defaults = True):
+        '''Helper method to include an additional property in the response
+        message.
+
+        Args:
+            prop (object): A dictionary including data related to the property.
+            with_defaults (bool, default): Wether to include default values for
+                the new property. The default values are:
+                - timeOfSample which includes the exact time of the response.
+                - uncertaintyInMilliseconds with a value of 50.
+        '''
         if with_defaults:
-            prop['timeOfSample'] = self.body['context']['properties'][0]['timeOfSample']
+            prop['timeOfSample'] =
+                        self.body['context']['properties'][0]['timeOfSample']
             prop['uncertaintyInMilliseconds'] = '50'
         self.body['context']['properties'].append(prop)
 
@@ -96,7 +120,8 @@ class Endpoint(object):
 
     def __call__(self, *args):
         answer = self.action()
-        self.response = Response(answer, status=200, mimetype='application/json')
+        self.response = Response(answer, status=200,
+                                 mimetype='application/json')
         return self.response
 
 class ServerManager():
@@ -115,11 +140,13 @@ class ServerManager():
     ### TUNNEL RELATED METHODS ###
     def load_tunnel_config(self):
         dirname = os.path.dirname(__file__)
-        config_path = os.path.join(dirname, '../../assets/config/server_config.json')
+        config_path = os.path.join(dirname,
+                                    '../../assets/config/server_config.json')
 
         # Verify the server config file exists. If not, copy the template.
         if not os.path.exists(config_path):
-            print('initializing config from template. Remember to update with proper values...')
+            print('initializing config from template. '
+                    + 'Remember to update with proper values...')
             copyfile(config_path + '_template', config_path)
 
         with open(config_path, 'r') as f:
@@ -131,8 +158,10 @@ class ServerManager():
     def run_tunnel(self):
         dirname = os.path.dirname(__file__)
         pagekite_path = os.path.join(dirname, 'pagekite.py')
-        logfile = open(os.path.join(dirname, '../../assets/logs/pagekite.log'), 'a+')
-        tunnel = subprocess.Popen(['python2', pagekite_path, str(self.tunnel_port), self.tunnel_address], stdout=logfile)
+        logfile = open(os.path.join(dirname,
+                        '../../assets/logs/pagekite.log'), 'a+')
+        tunnel = subprocess.Popen(['python2', pagekite_path,
+                str(self.tunnel_port), self.tunnel_address], stdout=logfile)
         print(tunnel)
 
     def token_is_valid(self, tok):
@@ -141,11 +170,13 @@ class ServerManager():
     ### FLASK RELATED METHODS ###
     def add_endpoint(self, handler=None, endpoint=None, endpoint_name=None):
         endpoint_name = endpoint[1:] if endpoint_name is None else endpoint_name
-        self.app.add_url_rule(endpoint, endpoint_name, Endpoint(handler), methods=['POST'])
+        self.app.add_url_rule(endpoint, endpoint_name,
+                                Endpoint(handler), methods=['POST'])
 
     def load_endpoints(self):
         self.add_endpoint(self.turn_smartcoil, "/turn_smartcoil")
-        self.add_endpoint(self.set_smartcoil_temperature, "/set_smartcoil_temperature")
+        self.add_endpoint(self.set_smartcoil_temperature,
+                            "/set_smartcoil_temperature")
         self.add_endpoint(self.set_smartcoil_speed, "/set_smartcoil_speed")
         self.add_endpoint(self.get_smartcoil_state, "/get_smartcoil_state")
 
@@ -154,7 +185,8 @@ class ServerManager():
 
         try:
             req_data = request.get_json()
-            # verify if incoming data contains a request element. Any exception is handled below.
+            # verify if incoming data contains a request element.
+            # Any exception is handled below.
             req_data['request']
             token = req_data['token']
             if not self.token_is_valid(token):
@@ -189,7 +221,8 @@ class ServerManager():
             res = AlexaResponse()
             res.set_namespace('Alexa.ThermostatController')
             res.set_name('thermostatMode')
-            res.set_value(request['directive']['payload']['thermostatMode']['value'])
+            res.set_value(
+                    request['directive']['payload']['thermostatMode']['value'])
             response_header = request['directive']['header']
             response_header['namespace'] = 'Alexa';
             response_header['name'] = 'Response';
@@ -276,7 +309,8 @@ class ServerManager():
                 print('unrecognized App action.')
                 return '{"error": "invalid information"}'
 
-            dbg = 'Current state is:\nstate: {}, speed: {}, thermostat temp: {}, AC temp set to: {}'.format(
+            dbg = ('Current state is:\nstate: {}, speed: {}, '
+                    + 'thermostat temp: {}, AC temp set to: {}').format(
                 info['state'], info['speed'], info['cur_temp'], info['usr_temp']
             )
             self.debug(dbg)
