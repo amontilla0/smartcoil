@@ -110,6 +110,8 @@ class ServerManager():
         self.tunnel_address = None
         self.tunnel_port = None
         self.acces_token = None
+        self.b_logfile = None
+        self.f_logfile = None
         self.load_tunnel_config()
 
     ### TUNNEL RELATED METHODS ###
@@ -128,11 +130,18 @@ class ServerManager():
             self.tunnel_port = conf['port']
             self.acces_token = conf['token']
 
+        self.b_logfile = open(os.path.join(dirname, '../../assets/logs/pagekite_back.log'), 'a+')
+        self.f_logfile = open(os.path.join(dirname, '../../assets/logs/pagekite_front.log'), 'a+')
+
+    def close_logs(self):
+        self.b_logfile.close()
+        self.f_logfile.close()
+        print('server logs successfully closed..')
+
     def run_tunnel(self):
         dirname = os.path.dirname(__file__)
         pagekite_path = os.path.join(dirname, 'pagekite.py')
-        logfile = open(os.path.join(dirname, '../../assets/logs/pagekite.log'), 'a+')
-        tunnel = subprocess.Popen(['python2', pagekite_path, str(self.tunnel_port), self.tunnel_address], stdout=logfile)
+        tunnel = subprocess.Popen(['python2', pagekite_path, str(self.tunnel_port), self.tunnel_address], stdout=self.b_logfile, stderr=self.f_logfile, shell=True)
         print(tunnel)
 
     def token_is_valid(self, tok):

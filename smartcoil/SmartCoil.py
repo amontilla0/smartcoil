@@ -19,7 +19,7 @@ COOLING = 'COOL'
 
 class SmartCoil():
     '''Serves as the main class that orchestrates communication between components (peripherals, GUI and APIs).'''
-    
+
     def __init__(self):
         try:
             # preparation of queues that will manage messages between threads.
@@ -263,6 +263,7 @@ class SmartCoil():
         print('cleaning up before exiting app...')
         self.exit.set()
         self.rc.cleanup()
+        self.srv.close_logs()
         # Once terminated, report the app is down to the DB
         self.report_app_status_to_db('OFF')
         exit(0)
