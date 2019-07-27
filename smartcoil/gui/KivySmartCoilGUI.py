@@ -22,8 +22,8 @@ from math import cos, sin, pi, sqrt
 from ..utils import utils
 
 class CircularSlider(Slider):
-    '''Subclass that handles all interaction with the circular slider that sets the target temperature
-    for the Smartcoil.
+    '''Subclass that handles all interaction with the circular slider that sets
+    the target temperature for the Smartcoil.
     '''
     circ_slider = ObjectProperty(None)
     tmpture_txt = ObjectProperty(None)
@@ -48,16 +48,23 @@ class CircularSlider(Slider):
     hot_color  = ListProperty([.99765, .33333, 0])
 
     def linear_coords(self, base_x, handle_size):
-        '''Helper method to get coordinates in a semi circle based on a linear value (x).
+        '''Helper method to get coordinates in a semi circle based on a linear
+        value (x).
+
         Args:
-            base_x (double): The input x coordinate, basically the x value where the cursor (or finger is placed).
-            handle_size (double): the radius of the slider handle, taken in account for final coordinates adjustment.
+            base_x (double): The input x coordinate, basically the x value where
+                the cursor (or finger is placed).
+            handle_size (double): the radius of the slider handle, taken in
+                account for final coordinates adjustment.
+
         Returns:
-            :obj:`tuple`: (x, y) coordinates where the slider should be rendered as a semi-circle trajectory.
+            :obj:`tuple`: (x, y) coordinates where the slider should be rendered
+            as a semi-circle trajectory.
         '''
         radius = ((min(self.size[0], self.size[1]) - self.thickness / 2) /2)
         #center of circle, angle in degree and radius of circle
-        center = (self.center_x - 5 - handle_size / 2, self.center_y + 5 - handle_size / 2)
+        center = (self.center_x - 5 - handle_size / 2, self.center_y + 5
+                  - handle_size / 2)
         angle = self.trajectory_mapping(base_x)
         rad = angle * pi /180
         x = center[0] + (radius * cos(rad))
@@ -66,11 +73,16 @@ class CircularSlider(Slider):
         return (x, y)
 
     def trajectory_mapping(self, base_x):
-        '''Helper method to get the angle to use for the semi-circle coordinates.
+        '''Helper method to get the angle to use for the semi-circle
+        coordinates.
+        
         Args:
-            base_x (double): The input x coordinate, basically the x value where the cursor (or finger is placed).
+            base_x (double): The input x coordinate, basically the x value where
+                the cursor (or finger is placed).
+
         Returns:
-            double: the resulting angle in the slider semi-circle, based on the input x coordinate.
+            double: the resulting angle in the slider semi-circle, based on the
+                input x coordinate.
         '''
         m = 240 / (self.right - self.x)
         # the -90 is for axis adjustment
@@ -95,10 +107,14 @@ class GUIWidget(BoxLayout):
     def __init__(self, outqueue, **kwargs):
         super(GUIWidget, self).__init__(**kwargs)
         self.orientation = 'vertical'
-        self.ids.logo.source = os.path.join(os.path.dirname(__file__), '../../assets/icons/smartcoil-logo.png')
-        self.ids.h_icon.source = os.path.join(os.path.dirname(__file__), '../../assets/icons/humidity_icon.png')
-        self.ids.a_icon.source = os.path.join(os.path.dirname(__file__), '../../assets/icons/wave_icon.png')
-        self.ids.tod_icon.source = os.path.join(os.path.dirname(__file__), '../../assets/icons/placeholder.png')
+        self.ids.logo.source = os.path.join(os.path.dirname(__file__),
+                                '../../assets/icons/smartcoil-logo.png')
+        self.ids.h_icon.source = os.path.join(os.path.dirname(__file__),
+                                '../../assets/icons/humidity_icon.png')
+        self.ids.a_icon.source = os.path.join(os.path.dirname(__file__),
+                                '../../assets/icons/wave_icon.png')
+        self.ids.tod_icon.source = os.path.join(os.path.dirname(__file__),
+                                    '../../assets/icons/placeholder.png')
         self.ids.c_sldr.set_color()
         self.outbound_queue = outqueue
         self.speed = 1
@@ -138,7 +154,8 @@ class GUIWidget(BoxLayout):
 
     def updateTodayIcon(self, src):
         try:
-            self.tod_icon.source = 'https://api.met.no/weatherapi/weathericon/1.1?content_type=image%2Fpng&is_night=0&symbol=3'
+            self.tod_icon.source = ('https://api.met.no/weatherapi/'
+            + 'weathericon/1.1?content_type=image%2Fpng&is_night=0&symbol=3')
         except Exception as e:
             print('Exception at GUIWidget.updateTodayIcon')
             print(type(e))
