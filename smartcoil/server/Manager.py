@@ -105,8 +105,8 @@ class AlexaResponse():
                 - uncertaintyInMilliseconds with a value of 50.
         '''
         if with_defaults:
-            prop['timeOfSample'] =
-                        self.body['context']['properties'][0]['timeOfSample']
+            prop['timeOfSample'] = (
+                        self.body['context']['properties'][0]['timeOfSample'])
             prop['uncertaintyInMilliseconds'] = '50'
         self.body['context']['properties'].append(prop)
 
