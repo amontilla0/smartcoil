@@ -75,7 +75,7 @@ class CircularSlider(Slider):
     def trajectory_mapping(self, base_x):
         '''Helper method to get the angle to use for the semi-circle
         coordinates.
-        
+
         Args:
             base_x (double): The input x coordinate, basically the x value where
                 the cursor (or finger is placed).
@@ -91,6 +91,9 @@ class CircularSlider(Slider):
         return -y
 
     def set_color(self):
+        '''Sets the color of the slider handle based on its current position. The color transitions
+        from blue hues for colder temperatures to orange hues for hotter values.
+        '''
         vn = self.value_normalized
         cc = self.cold_color
         hc = self.hot_color
@@ -102,9 +105,21 @@ class CircularSlider(Slider):
         self.halo_col2 = (hc[0], hc[1], hc[2], vn * 0.3)
 
 class GUIWidget(BoxLayout):
+    '''Main widget class encapsulating temperature slider, fan speed buttons and status information.
+    '''
     LEFT_PADDING = NumericProperty(15)
 
     def __init__(self, outqueue, **kwargs):
+        '''The module is intented to be a secondary thread of the base class
+        SmartCoil.
+        To allow communication between the main thread and this thread, a Queue
+        can be passed as an argument.
+
+        Args:
+            outqueue (:obj:`Queue`): Outbound queue to send messages
+                to the main thread.
+            **kwargs: Arbitrary keyword arguments.
+        '''
         super(GUIWidget, self).__init__(**kwargs)
         self.orientation = 'vertical'
         self.ids.logo.source = os.path.join(os.path.dirname(__file__),
