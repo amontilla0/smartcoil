@@ -18,9 +18,14 @@ HEATING = 'HEAT'
 COOLING = 'COOL'
 
 class SmartCoil():
-    '''Serves as the main class that orchestrates communication between components (peripherals, GUI and APIs).'''
+    '''Serves as the main class that orchestrates communication between
+    components (peripherals, GUI and APIs).
+    '''
 
     def __init__(self):
+        '''This constructor initializes weather, sensor, relay, gui and server
+        classes.
+        '''
         try:
             # preparation of queues that will manage messages between threads.
             self.inbound_queue = Queue()
