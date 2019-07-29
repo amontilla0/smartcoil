@@ -91,8 +91,9 @@ class CircularSlider(Slider):
         return -y
 
     def set_color(self):
-        '''Sets the color of the slider handle based on its current position. The color transitions
-        from blue hues for colder temperatures to orange hues for hotter values.
+        '''Sets the color of the slider handle based on its current position.
+        The color transitions from blue hues for colder temperatures to orange
+        hues for hotter values.
         '''
         vn = self.value_normalized
         cc = self.cold_color
@@ -105,7 +106,8 @@ class CircularSlider(Slider):
         self.halo_col2 = (hc[0], hc[1], hc[2], vn * 0.3)
 
 class GUIWidget(BoxLayout):
-    '''Main widget class encapsulating temperature slider, fan speed buttons and status information.
+    '''Main widget class encapsulating temperature slider, fan speed buttons and
+    status information.
     '''
     LEFT_PADDING = NumericProperty(15)
 
@@ -138,16 +140,31 @@ class GUIWidget(BoxLayout):
         self.last_usr_tmp_seen = int(self.ids.c_sldr.value)
 
     def on_touch_move(self, touch):
+        '''Listener for the event of dragging a finger on the PiTFT screen.
+
+        Args:
+            touch (:obj:`tuple`): Parent-related coordinates of the touch event.
+        '''
         sup = super(GUIWidget, self).on_touch_move(touch)
         self.ids.c_sldr.set_color()
         return sup
 
     def on_touch_down(self, touch):
+        '''Listener for the event of pressing a finger on the PiTFT screen.
+
+        Args:
+            touch (:obj:`tuple`): Parent-related coordinates of the touch event.
+        '''
         sup = super(GUIWidget, self).on_touch_down(touch)
         self.ids.c_sldr.set_color()
         return sup
 
     def on_touch_up(self, touch):
+        '''Listener for the event of releasing a finger from the PiTFT screen.
+
+        Args:
+            touch (:obj:`tuple`): Parent-related coordinates of the touch event.
+        '''
         sup = super(GUIWidget, self).on_touch_up(touch)
         if self.last_usr_tmp_seen != int(self.ids.c_sldr.value):
             self.outbound_queue.put(utils.Message('GUIMSG'))
