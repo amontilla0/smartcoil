@@ -115,29 +115,30 @@ class AlexaResponse():
 
 
 class Endpoint(object):
-    '''Subclass that builds endpoints to be used by Flask. The server needs to be started inside of
-    a class instead of the main module scope in order to be treated as an object from the main
-    SmartCoil class.
+    '''Subclass that builds endpoints to be used by Flask. The server needs to
+    be started inside of a class instead of the main module scope in order to be
+    treated as an object from the main SmartCoil class.
     '''
     def __init__(self, action):
-        '''The endpoint consists of a specific action to evaluate when a client access the
-        corresponding URI.
+        '''The endpoint consists of a specific action to evaluate when a client
+        access the corresponding URI.
 
         Args:
-            action (:obj:`function`): The method to execute when a corresponding URI is accessed.
-                This action must return a JSON string.
+            action (:obj:`function`): The method to execute when a corresponding
+                URI is accessed. This action must return a JSON string.
         '''
         self.action = action
 
     def __call__(self, *args):
-        '''This method is required to be implemented in order for Flask to treat it as a proper
-        endpoint.
+        '''This method is required to be implemented in order for Flask to treat
+        it as a proper endpoint.
 
         Args:
             *args: Variable length argument list.
 
         Returns:
-            A JSON response (provided by the endpoint action) with a status code of 200.
+            :obj:`str`: A JSON response (provided by the endpoint action) with a
+            status code of 200.
         '''
         answer = self.action()
         self.response = Response(answer, status=200,
@@ -145,10 +146,24 @@ class Endpoint(object):
         return self.response
 
 class ServerManager():
-    '''Serves as the class that runs both the Flask server that manages Alexa requests, as well as
-    the SSH tunnel based on pagekite library.
+    '''Serves as the class that runs both the Flask server that manages Alexa
+    requests, as well as the SSH tunnel based on the pagekite library.
     '''
     def __init__(self, outqueue = None, inqueue = None):
+        '''The module is intented to be a secondary thread of the base class
+        SmartCoil.
+        To allow communication between the main thread and this thread, a Queue
+        must be passed as an argument.
+        Additionally, this class receives information from the main SmartCoil
+        thread, which is performed with a second Queue enabling 2-way
+        communication.
+
+        Args:
+            outqueue (:obj:`Queue`): Outbound queue to send messages to the main
+                thread.
+            inqueue (:obj:`Queue`): Inbound queue to receive messages from the
+            main thread.
+        '''
         self.app = Flask(__name__)
         self.load_endpoints()
 
