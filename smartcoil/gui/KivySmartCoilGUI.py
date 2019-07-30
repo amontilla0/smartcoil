@@ -173,6 +173,11 @@ class GUIWidget(BoxLayout):
         return sup
 
     def updateCurrentTemp(self, tmp):
+        '''Assigns the label for current temperature to specified value.
+
+        Args:
+            tmp (double): Current temperature to assign.
+        '''
         self.c_sldr.ids.curr_tmpture_txt.text = 'currently {}'.format(tmp)
 
     def updateHumidity(self, hum):
