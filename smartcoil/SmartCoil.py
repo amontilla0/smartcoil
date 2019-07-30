@@ -25,6 +25,8 @@ class SmartCoil():
     def __init__(self):
         '''This constructor initializes weather, sensor, relay, gui and server
         classes.
+        Take in account that this classes looks for the SQLite DB "/assets/db/SmartCoilDB"
+        if not found, a template is used instead, which holds all valid tables but no data included.
         '''
         try:
             # preparation of queues that will manage messages between threads.
@@ -66,6 +68,8 @@ class SmartCoil():
             traceback.print_tb(e.__traceback__)
 
     def run_sensor_fetcher(self):
+        '''Method used by the thread that will handle the BME680 sensor.
+        '''
         try:
             self.snsr.run_sensor(exit_evt = self.exit)
         except Exception as e:
