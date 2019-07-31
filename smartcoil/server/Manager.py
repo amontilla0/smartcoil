@@ -111,6 +111,12 @@ class AlexaResponse():
         self.body['context']['properties'].append(prop)
 
     def get_json(self):
+        '''Gets the resulting JSON as a string object. Used after the Alexa
+        Response is completely built.
+
+        Returns:
+            :obj:`str`: The string represeting the JSON for the Alexa Response.
+        '''
         return json.dumps(self.body)
 
 
@@ -179,6 +185,12 @@ class ServerManager():
 
     ### TUNNEL RELATED METHODS ###
     def load_tunnel_config(self):
+        '''Initializes the SSH tunnel by loading the pagekite class in a new
+        subprocess. Notice that this method loads config info from
+        '/assets/config/server_config.json' file, if the document is not found
+        a template will be used in place, but remember to change 'tunnel' (URL),
+        'port' (integer) and 'token' (string) values to valid entries.
+        '''
         dirname = os.path.dirname(__file__)
         config_path = os.path.join(dirname,
                                     '../../assets/config/server_config.json')
