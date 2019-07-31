@@ -79,10 +79,14 @@ class SmartCoil():
             traceback.print_tb(e.__traceback__)
 
     def run_sensor_fetcher_thread(self):
+        '''Method that starts the thread that will handle the BME680 sensor.
+        '''
         th = Thread(target=self.run_sensor_fetcher, name='sensorFetcher')
         th.start()
 
     def run_weather_fetcher(self):
+        '''Method used by the thread that will fetch weather data from yr.no.
+        '''
         try:
             self.wthr.run_updates(exit_evt = self.exit)
         except Exception as e:
@@ -92,10 +96,16 @@ class SmartCoil():
             traceback.print_tb(e.__traceback__)
 
     def run_weather_fetcher_thread(self):
+        '''Method that starts the thread that will fetch weather data from
+        yr.no.
+        '''
         th = Thread(target=self.run_weather_fetcher, name='weatherFetcher')
         th.start()
 
     def run_server(self):
+        '''Method used by the thread that will run the server to get Alexa
+        requests.
+        '''
         try:
             self.srv.run()
         except Exception as e:
@@ -105,11 +115,16 @@ class SmartCoil():
             traceback.print_tb(e.__traceback__)
 
     def run_server_thread(self):
+        '''Method that starts the thread that will run the server to get Alexa
+        requests.
+        '''
         th = Thread(target=self.run_server, name='AlexaRequestsServer')
         th.daemon = True
         th.start()
 
     def run_gui(self):
+        '''Method that starts the GUI. Run in the main thread of the app.
+        '''
         self.gui.run()
 
     def commit_to_db(self, sql, params):
