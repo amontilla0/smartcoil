@@ -173,26 +173,45 @@ class GUIWidget(BoxLayout):
         return sup
 
     def updateCurrentTemp(self, tmp):
-        '''Assigns the label for current temperature to specified value.
+        '''Assigns the label for current indoor temperature to specified value.
 
         Args:
-            tmp (double): Current temperature to assign.
+            tmp (double): Current indoor temperature to assign.
         '''
         self.c_sldr.ids.curr_tmpture_txt.text = 'currently {}'.format(tmp)
 
     def updateHumidity(self, hum):
+        '''Assigns the label for current humidity to specified value.
+
+        Args:
+            hum (double): Current humidity to assign.
+        '''
         self.h_lab.text = '{}%'.format(hum)
 
     def updateAirQuality(self, aq):
+        '''Assigns the label for current ait quality to specified value.
+
+        Args:
+            aq (double): Current air quality to assign.
+        '''
         self.a_lab.text = '{}%'.format(aq)
 
     def updateTodayTemp(self, tmp):
+        '''Assigns the label for current outdoor temperature to specified value.
+
+        Args:
+            tmp (double): Current outdoor temperature to assign.
+        '''
         self.tod_tmp.text = '{}'.format(tmp)
 
     def updateTodayIcon(self, src):
+        '''Assigns the icon for today's forecast to specified value.
+
+        Args:
+            src (:obj:`str`): URI of the icon for today's forecast.
+        '''
         try:
-            self.tod_icon.source = ('https://api.met.no/weatherapi/'
-            + 'weathericon/1.1?content_type=image%2Fpng&is_night=0&symbol=3')
+            self.tod_icon.source = src
         except Exception as e:
             print('Exception at GUIWidget.updateTodayIcon')
             print(type(e))
@@ -200,9 +219,19 @@ class GUIWidget(BoxLayout):
             traceback.print_tb(e.__traceback__)
 
     def get_user_temp(self):
+        '''Gets the temperature value assigned by the user in the GUI.
+
+        Returns:
+            int: The target temperature assigned by the user.
+        '''
         return int(self.c_sldr.ids.tmpture_txt.text)
 
     def set_user_temp(self, temp):
+        '''Sets the target temperature value in the GUI.
+
+        Args:
+            temp (int): The target temperature to assign.
+        '''
         self.c_sldr.value = temp
         self.ids.c_sldr.set_color()
 
