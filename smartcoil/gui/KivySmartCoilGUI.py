@@ -236,6 +236,12 @@ class GUIWidget(BoxLayout):
         self.ids.c_sldr.set_color()
 
     def user_turned_off_fancoil(self):
+        '''Verifies if the user turned off the smartcoil by checking if the
+        speed is zero.
+
+        Returns:
+            bool: Whether the smartcoil is explicitly turned off or not.
+        '''
         return self.speed == 0
 
     def get_user_speed(self):
