@@ -211,6 +211,8 @@ class ServerManager():
         self.f_logfile = open(os.path.join(dirname, '../../assets/logs/pagekite_front.log'), 'a+')
 
     def close_logs(self):
+        '''Helper method to help close the log files for the tunnel.
+        '''
         self.b_logfile.close()
         self.f_logfile.close()
         print('server logs successfully closed..')
