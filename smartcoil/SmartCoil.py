@@ -128,12 +128,25 @@ class SmartCoil():
         self.gui.run()
 
     def commit_to_db(self, sql, params):
+        '''Commits a given sql query to the SQLite databse.
+
+        Args:
+            sql (:obj:`str`): The SQL string to be executed.
+            params (:obj:`list`): A list of parameters to be included in the
+                query.
+        '''
         with sqlite3.connect(self.dbase_path) as conn:
             crsr = conn.cursor()
             crsr.execute(sql, params)
             conn.commit()
 
     def report_app_status_to_db(self, status):
+        '''Reports the status of the SmartCoil app to the database. This method
+        is used when the app starts running and when it is interrupted.
+
+        Args:
+            status (:obj:`str`): The string status which could be 'ON' or 'OFF'
+        '''
         sql = 'INSERT INTO APP_STATUS VALUES (?, ?)'
         tstamp = datetime.now()
         data = [tstamp, status]
