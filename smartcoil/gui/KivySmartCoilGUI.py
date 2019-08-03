@@ -245,12 +245,27 @@ class GUIWidget(BoxLayout):
         return self.speed == 0
 
     def get_user_speed(self):
+        '''Gets the speed currently set for the smartcoil.
+
+        Returns:
+            int: A value ranging from 0 (off) to 3 (high speed).
+        '''
         return self.speed
 
     def get_last_speed_seen(self):
+        '''Gets the last speed set before the smartcoil was turned off.
+
+        Returns:
+            int: A value ranging from 1 (low speed) to 3 (high speed).
+        '''
         return self.last_usr_spd_seen
 
     def get_speed_changed_flag(self):
+        '''Gets a flag that verifies if the speed was recently changed.
+
+        Returns:
+            bool: Whether the speed was recently changed.
+        '''
         return self.speed_changed
 
     def clear_speed_changed_flag(self):
