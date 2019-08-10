@@ -18,7 +18,16 @@ HEATING = 'HEAT'
 COOLING = 'COOL'
 
 class SmartCoil():
+    '''Serves as the main class that orchestrates communication between
+    components (peripherals, GUI and APIs).
+    '''
+
     def __init__(self):
+        '''This constructor initializes weather, sensor, relay, gui and server
+        classes.
+        Take in account that this classes looks for the SQLite DB "/assets/db/SmartCoilDB"
+        if not found, a template is used instead, which holds all valid tables but no data included.
+        '''
         try:
             # preparation of queues that will manage messages between threads.
             self.inbound_queue = Queue()
@@ -59,6 +68,8 @@ class SmartCoil():
             traceback.print_tb(e.__traceback__)
 
     def run_sensor_fetcher(self):
+        '''Method used by the thread that will handle the BME680 sensor.
+        '''
         try:
             self.snsr.run_sensor(exit_evt = self.exit)
         except Exception as e:
@@ -68,10 +79,14 @@ class SmartCoil():
             traceback.print_tb(e.__traceback__)
 
     def run_sensor_fetcher_thread(self):
+        '''Method that starts the thread that will handle the BME680 sensor.
+        '''
         th = Thread(target=self.run_sensor_fetcher, name='sensorFetcher')
         th.start()
 
     def run_weather_fetcher(self):
+        '''Method used by the thread that will fetch weather data from yr.no.
+        '''
         try:
             self.wthr.run_updates(exit_evt = self.exit)
         except Exception as e:
@@ -81,10 +96,16 @@ class SmartCoil():
             traceback.print_tb(e.__traceback__)
 
     def run_weather_fetcher_thread(self):
+        '''Method that starts the thread that will fetch weather data from
+        yr.no.
+        '''
         th = Thread(target=self.run_weather_fetcher, name='weatherFetcher')
         th.start()
 
     def run_server(self):
+        '''Method used by the thread that will run the server to get Alexa
+        requests.
+        '''
         try:
             self.srv.run()
         except Exception as e:
@@ -94,20 +115,38 @@ class SmartCoil():
             traceback.print_tb(e.__traceback__)
 
     def run_server_thread(self):
+        '''Method that starts the thread that will run the server to get Alexa
+        requests.
+        '''
         th = Thread(target=self.run_server, name='AlexaRequestsServer')
         th.daemon = True
         th.start()
 
     def run_gui(self):
+        '''Method that starts the GUI. Run in the main thread of the app.
+        '''
         self.gui.run()
 
     def commit_to_db(self, sql, params):
+        '''Commits a given sql query to the SQLite databse.
+
+        Args:
+            sql (:obj:`str`): The SQL string to be executed.
+            params (:obj:`list`): A list of parameters to be included in the
+                query.
+        '''
         with sqlite3.connect(self.dbase_path) as conn:
             crsr = conn.cursor()
             crsr.execute(sql, params)
             conn.commit()
 
     def report_app_status_to_db(self, status):
+        '''Reports the status of the SmartCoil app to the database. This method
+        is used when the app starts running and when it is interrupted.
+
+        Args:
+            status (:obj:`str`): The string status which could be 'ON' or 'OFF'
+        '''
         sql = 'INSERT INTO APP_STATUS VALUES (?, ?)'
         tstamp = datetime.now()
         data = [tstamp, status]
@@ -261,6 +300,7 @@ class SmartCoil():
         print('cleaning up before exiting app...')
         self.exit.set()
         self.rc.cleanup()
+        self.srv.close_logs()
         # Once terminated, report the app is down to the DB
         self.report_app_status_to_db('OFF')
         exit(0)

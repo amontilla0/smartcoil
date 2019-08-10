@@ -22,6 +22,9 @@ from math import cos, sin, pi, sqrt
 from ..utils import utils
 
 class CircularSlider(Slider):
+    '''Subclass that handles all interaction with the circular slider that sets
+    the target temperature for the Smartcoil.
+    '''
     circ_slider = ObjectProperty(None)
     tmpture_txt = ObjectProperty(None)
     thickness = NumericProperty(5)
@@ -45,9 +48,23 @@ class CircularSlider(Slider):
     hot_color  = ListProperty([.99765, .33333, 0])
 
     def linear_coords(self, base_x, handle_size):
+        '''Helper method to get coordinates in a semi circle based on a linear
+        value (x).
+
+        Args:
+            base_x (double): The input x coordinate, basically the x value where
+                the cursor (or finger is placed).
+            handle_size (double): the radius of the slider handle, taken in
+                account for final coordinates adjustment.
+
+        Returns:
+            :obj:`tuple`: (x, y) coordinates where the slider should be rendered
+            as a semi-circle trajectory.
+        '''
         radius = ((min(self.size[0], self.size[1]) - self.thickness / 2) /2)
         #center of circle, angle in degree and radius of circle
-        center = (self.center_x - 5 - handle_size / 2, self.center_y + 5 - handle_size / 2)
+        center = (self.center_x - 5 - handle_size / 2, self.center_y + 5
+                  - handle_size / 2)
         angle = self.trajectory_mapping(base_x)
         rad = angle * pi /180
         x = center[0] + (radius * cos(rad))
@@ -56,6 +73,17 @@ class CircularSlider(Slider):
         return (x, y)
 
     def trajectory_mapping(self, base_x):
+        '''Helper method to get the angle to use for the semi-circle
+        coordinates.
+
+        Args:
+            base_x (double): The input x coordinate, basically the x value where
+                the cursor (or finger is placed).
+
+        Returns:
+            double: the resulting angle in the slider semi-circle, based on the
+                input x coordinate.
+        '''
         m = 240 / (self.right - self.x)
         # the -90 is for axis adjustment
         y = m * (base_x - self.x) + (-120) - 90
@@ -63,6 +91,10 @@ class CircularSlider(Slider):
         return -y
 
     def set_color(self):
+        '''Sets the color of the slider handle based on its current position.
+        The color transitions from blue hues for colder temperatures to orange
+        hues for hotter values.
+        '''
         vn = self.value_normalized
         cc = self.cold_color
         hc = self.hot_color
@@ -74,15 +106,32 @@ class CircularSlider(Slider):
         self.halo_col2 = (hc[0], hc[1], hc[2], vn * 0.3)
 
 class GUIWidget(BoxLayout):
+    '''Main widget class encapsulating temperature slider, fan speed buttons and
+    status information.
+    '''
     LEFT_PADDING = NumericProperty(15)
 
     def __init__(self, outqueue, **kwargs):
+        '''The module is intented to be a secondary thread of the base class
+        SmartCoil.
+        To allow communication between the main thread and this thread, a Queue
+        can be passed as an argument.
+
+        Args:
+            outqueue (:obj:`Queue`): Outbound queue to send messages
+                to the main thread.
+            **kwargs: Arbitrary keyword arguments.
+        '''
         super(GUIWidget, self).__init__(**kwargs)
         self.orientation = 'vertical'
-        self.ids.logo.source = os.path.join(os.path.dirname(__file__), '../../assets/icons/smartcoil-logo.png')
-        self.ids.h_icon.source = os.path.join(os.path.dirname(__file__), '../../assets/icons/humidity_icon.png')
-        self.ids.a_icon.source = os.path.join(os.path.dirname(__file__), '../../assets/icons/wave_icon.png')
-        self.ids.tod_icon.source = os.path.join(os.path.dirname(__file__), '../../assets/icons/placeholder.png')
+        self.ids.logo.source = os.path.join(os.path.dirname(__file__),
+                                '../../assets/icons/smartcoil-logo.png')
+        self.ids.h_icon.source = os.path.join(os.path.dirname(__file__),
+                                '../../assets/icons/humidity_icon.png')
+        self.ids.a_icon.source = os.path.join(os.path.dirname(__file__),
+                                '../../assets/icons/wave_icon.png')
+        self.ids.tod_icon.source = os.path.join(os.path.dirname(__file__),
+                                    '../../assets/icons/placeholder.png')
         self.ids.c_sldr.set_color()
         self.outbound_queue = outqueue
         self.speed = 1
@@ -91,16 +140,31 @@ class GUIWidget(BoxLayout):
         self.last_usr_tmp_seen = int(self.ids.c_sldr.value)
 
     def on_touch_move(self, touch):
+        '''Listener for the event of dragging a finger on the PiTFT screen.
+
+        Args:
+            touch (:obj:`tuple`): Parent-related coordinates of the touch event.
+        '''
         sup = super(GUIWidget, self).on_touch_move(touch)
         self.ids.c_sldr.set_color()
         return sup
 
     def on_touch_down(self, touch):
+        '''Listener for the event of pressing a finger on the PiTFT screen.
+
+        Args:
+            touch (:obj:`tuple`): Parent-related coordinates of the touch event.
+        '''
         sup = super(GUIWidget, self).on_touch_down(touch)
         self.ids.c_sldr.set_color()
         return sup
 
     def on_touch_up(self, touch):
+        '''Listener for the event of releasing a finger from the PiTFT screen.
+
+        Args:
+            touch (:obj:`tuple`): Parent-related coordinates of the touch event.
+        '''
         sup = super(GUIWidget, self).on_touch_up(touch)
         if self.last_usr_tmp_seen != int(self.ids.c_sldr.value):
             self.outbound_queue.put(utils.Message('GUIMSG'))
@@ -109,20 +173,45 @@ class GUIWidget(BoxLayout):
         return sup
 
     def updateCurrentTemp(self, tmp):
+        '''Assigns the label for current indoor temperature to specified value.
+
+        Args:
+            tmp (double): Current indoor temperature to assign.
+        '''
         self.c_sldr.ids.curr_tmpture_txt.text = 'currently {}'.format(tmp)
 
     def updateHumidity(self, hum):
+        '''Assigns the label for current humidity to specified value.
+
+        Args:
+            hum (double): Current humidity to assign.
+        '''
         self.h_lab.text = '{}%'.format(hum)
 
     def updateAirQuality(self, aq):
+        '''Assigns the label for current ait quality to specified value.
+
+        Args:
+            aq (double): Current air quality to assign.
+        '''
         self.a_lab.text = '{}%'.format(aq)
 
     def updateTodayTemp(self, tmp):
+        '''Assigns the label for current outdoor temperature to specified value.
+
+        Args:
+            tmp (double): Current outdoor temperature to assign.
+        '''
         self.tod_tmp.text = '{}'.format(tmp)
 
     def updateTodayIcon(self, src):
+        '''Assigns the icon for today's forecast to specified value.
+
+        Args:
+            src (:obj:`str`): URI of the icon for today's forecast.
+        '''
         try:
-            self.tod_icon.source = 'https://api.met.no/weatherapi/weathericon/1.1?content_type=image%2Fpng&is_night=0&symbol=3'
+            self.tod_icon.source = src
         except Exception as e:
             print('Exception at GUIWidget.updateTodayIcon')
             print(type(e))
@@ -130,22 +219,53 @@ class GUIWidget(BoxLayout):
             traceback.print_tb(e.__traceback__)
 
     def get_user_temp(self):
+        '''Gets the temperature value assigned by the user in the GUI.
+
+        Returns:
+            int: The target temperature assigned by the user.
+        '''
         return int(self.c_sldr.ids.tmpture_txt.text)
 
     def set_user_temp(self, temp):
+        '''Sets the target temperature value in the GUI.
+
+        Args:
+            temp (int): The target temperature to assign.
+        '''
         self.c_sldr.value = temp
         self.ids.c_sldr.set_color()
 
     def user_turned_off_fancoil(self):
+        '''Verifies if the user turned off the smartcoil by checking if the
+        speed is zero.
+
+        Returns:
+            bool: Whether the smartcoil is explicitly turned off or not.
+        '''
         return self.speed == 0
 
     def get_user_speed(self):
+        '''Gets the speed currently set for the smartcoil.
+
+        Returns:
+            int: A value ranging from 0 (off) to 3 (high speed).
+        '''
         return self.speed
 
     def get_last_speed_seen(self):
+        '''Gets the last speed set before the smartcoil was turned off.
+
+        Returns:
+            int: A value ranging from 1 (low speed) to 3 (high speed).
+        '''
         return self.last_usr_spd_seen
 
     def get_speed_changed_flag(self):
+        '''Gets a flag that verifies if the speed was recently changed.
+
+        Returns:
+            bool: Whether the speed was recently changed.
+        '''
         return self.speed_changed
 
     def clear_speed_changed_flag(self):
