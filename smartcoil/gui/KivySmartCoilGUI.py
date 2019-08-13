@@ -269,9 +269,17 @@ class GUIWidget(BoxLayout):
         return self.speed_changed
 
     def clear_speed_changed_flag(self):
+        '''Clears the "speed_changed" flag, to be used right after the flag is processed in the
+            main SmartCoil app.
+        '''
         self.speed_changed = False
 
     def set_user_speed(self, speed):
+        '''Sets the speed value in the GUI.
+
+        Args:
+            speed (int): A value from 0 to 3 for off, low, medium or high speed.
+        '''
         self.speed = speed
         self.speed_changed = True
         if speed > 0:
@@ -289,34 +297,59 @@ class GUIWidget(BoxLayout):
         buttons[speed].state = 'down'
 
     def fancoil_on_lo(self):
+        '''Helper method to report the speed was set to low on the outbound queue (read by th main
+        SmartCoil app).
+        '''
         self.speed = 1
         self.last_usr_spd_seen = 1
         self.speed_changed = True
         self.outbound_queue.put(utils.Message('GUIMSG'))
 
     def fancoil_on_mi(self):
+        '''Helper method to report the speed was set to medium on the outbound queue (read by th main
+        SmartCoil app).
+        '''
         self.speed = 2
         self.last_usr_spd_seen = 2
         self.speed_changed = True
         self.outbound_queue.put(utils.Message('GUIMSG'))
 
     def fancoil_on_hi(self):
+        '''Helper method to report the speed was set to high on the outbound queue (read by th main
+        SmartCoil app).
+        '''
         self.speed = 3
         self.last_usr_spd_seen = 3
         self.speed_changed = True
         self.outbound_queue.put(utils.Message('GUIMSG'))
 
     def fancoil_off(self):
+        '''Helper method to report the speed was set to off on the outbound queue (read by th main
+        SmartCoil app).
+        '''
         self.speed = 0
         self.outbound_queue.put(utils.Message('GUIMSG'))
 
 
 class SmartCoilGUIApp(App):
+    '''Serves as the class that initiates the graphic user interface with Kivy.
+    '''
     def __init__(self, outqueue = None):
+        '''The module is intented to be a secondary thread of the base class
+        SmartCoil.
+        To allow communication between the main thread and this thread, a Queue
+        can be passed as an argument.
+
+        Args:
+            outqueue (:obj:`Queue`, optional): Outbound queue to send messages
+                to the main thread.
+        '''
         super(SmartCoilGUIApp, self).__init__()
         self.outbound_queue = outqueue
 
     def build(self):
+        '''Required Kivy method to build and show the GUI.
+        '''
         return GUIWidget(self.outbound_queue)
 
 if __name__ == "__main__":
