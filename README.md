@@ -10,7 +10,7 @@ Full interface to automate a home-based fan coil unit with a Raspberry Pi.
 
 Pictures of the GUI and home-made case views are listed below.
 
-[Smartcoil GUI](./assets/md_images/SmartCoil_GUI.png) [Smartcoil case Front view](./assets/md_images/SmartCoil_view1.png) [Smartcoil case side view](./assets/md_images/SmartCoil_view2.png)
+[![Smartcoil GUI](./assets/md_images/SmartCoil_GUI.png)]() [![Smartcoil case Front view](./assets/md_images/SmartCoil_view1.png)]() [![Smartcoil case side view](./assets/md_images/SmartCoil_view2.png)]()
 
 This project is based in the following technologies:
 
@@ -39,7 +39,7 @@ The **4-channel relay module** is wired as follows:
 
 For a graphic reference, refer to the schematic below.
 
-[Smartcoil Circuit Sketch](./assets/md_images/SmartCoil_Circuit.png)
+[![Smartcoil Circuit Sketch](./assets/md_images/SmartCoil_Circuit.png)]()
 
 ## Amazon Alexa configuration
 In order to use the Alexa portion of the project, you must build your own Alexa smart home skill. You could follow the official guide on [Steps to Build a Smart Home Skill](https://developer.amazon.com/docs/smarthome/steps-to-build-a-smart-home-skill.html) and use the code I implemented for my own skill, found in [here](https://github.com/amontilla0/smartcoil/blob/master/assets/index.js).
