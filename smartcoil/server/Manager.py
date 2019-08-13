@@ -218,16 +218,34 @@ class ServerManager():
         print('server logs successfully closed..')
 
     def run_tunnel(self):
+        '''Helper method to run the pagekite tunnel.
+        '''
         dirname = os.path.dirname(__file__)
         pagekite_path = os.path.join(dirname, 'pagekite.py')
         tunnel = subprocess.Popen(['python2', pagekite_path, str(self.tunnel_port), self.tunnel_address], stdout=self.b_logfile, stderr=self.f_logfile)
         print(tunnel)
 
     def token_is_valid(self, tok):
+        '''Helper method to verify the incoming auth token from the AWS lambda server is valid.
+
+        Args:
+            tok (:obj:`str`): incoming token string to validate against the one set in
+                server_config.json.
+        '''
         return self.acces_token == tok
 
     ### FLASK RELATED METHODS ###
     def add_endpoint(self, handler=None, endpoint=None, endpoint_name=None):
+        '''Since the flask app runs inside of a class, this special method adds the endpoints to
+        the local API instead of using the regular decorators.
+
+        Args:
+            handler (:obj:`function`, optional): The action to execute on this endpoint.
+                Defaults to None.
+            endpoint (obj:`str`, optional): Endpoint URI. Defaults to None.
+            endpoint_name (obj:`str`, optional): Optional name for the endpoint. Defaults to None.
+
+        '''
         endpoint_name = endpoint[1:] if endpoint_name is None else endpoint_name
         self.app.add_url_rule(endpoint, endpoint_name,
                                 Endpoint(handler), methods=['POST'])
