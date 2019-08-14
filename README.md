@@ -16,7 +16,7 @@ This project is based in the following technologies:
 
 - Kivy for GUI that allows temperature and fan speed manipulation through a PiTFT touch screen.
 - BME680 sensor for current temperature, humidity and air quality information in the GUI.
-- 4 relay cluster to control coil valve and fan states.
+- 4-channel relay module to control coil valve and fan states.
 - Meteorologisk institutt weather API for additional information such as outdoors temperature and weather forecast in the GUI.
 - Flask for server deployment + Pagekite for HTTPS tunneling to control the app through an Alexa Smart Home Skill.
 
@@ -42,7 +42,7 @@ For a graphic reference, refer to the schematic below.
 [![Smartcoil Circuit Sketch](./assets/md_images/SmartCoil_Circuit.png)]()
 
 ## Amazon Alexa configuration
-In order to use the Alexa portion of the project, you must build your own Alexa smart home skill. You could follow the official guide on [Steps to Build a Smart Home Skill](https://developer.amazon.com/docs/smarthome/steps-to-build-a-smart-home-skill.html) and use the code I implemented for my own skill, found in [here](https://github.com/amontilla0/smartcoil/blob/master/assets/index.js).
+In order to use the Alexa portion of the project, you must build your own Alexa smart home skill. You could follow the official guide on [Steps to Build a Smart Home Skill](https://developer.amazon.com/docs/smarthome/steps-to-build-a-smart-home-skill.html) and use the code I implemented for my own skill, found in [here](https://github.com/amontilla0/smartcoil/blob/master/assets/alexa_nodejs/index.js).
 
 Create a new account on [pagekite](https://pagekite.net/) (they have a free trial) to enable HTTPS tunneling and do the following configuration:
 - In the index.js file for AWS lambda, update the constant ``tok`` with a unique secret token.
@@ -61,7 +61,7 @@ python3 tests/main_test.py
 # Additional resources
 To see the SmartCoil in action, please refer to the following video:
 
-<TODO: add video>
+[![SmartCoil in action](./assets/md_images/youtube_thumbnail.png)](https://www.youtube.com/watch?v=e4mJBE2wtNs)
 
 ## License
 [MIT](https://choosealicense.com/licenses/mit/)
