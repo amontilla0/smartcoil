@@ -153,6 +153,11 @@ class SmartCoil():
         self.commit_to_db(sql, data)
 
     def commit_weather_data(self, tstamp = None):
+        '''Commits weather information to the database.
+
+        Args:
+            tstamp (int, optional): Timestamp of the entry. If not passed, current time is used.
+        '''
         if tstamp is None:
             tstamp = datetime.now()
 
