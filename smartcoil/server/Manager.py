@@ -251,6 +251,14 @@ class ServerManager():
                                 Endpoint(handler), methods=['POST'])
 
     def load_endpoints(self):
+        '''Uses add_endpoint method to load all corresponding endpoints for the Flask server, in
+        particular:
+        - turn_smartcoil
+        - set_smartcoil_temperature
+        - set_smartcoil_speed
+        - get_smartcoil_state
+        '''
+
         self.add_endpoint(self.turn_smartcoil, "/turn_smartcoil")
         self.add_endpoint(self.set_smartcoil_temperature,
                             "/set_smartcoil_temperature")
