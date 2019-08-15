@@ -266,6 +266,11 @@ class ServerManager():
         self.add_endpoint(self.get_smartcoil_state, "/get_smartcoil_state")
 
     def access_data_is_valid(self):
+        '''Helper method to validate the access token incoming from AWS Lambda.
+
+        Returns:
+            bool: Whether the token is a match or not.
+        '''
         req_data = None
 
         try:
