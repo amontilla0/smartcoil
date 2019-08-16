@@ -48,6 +48,8 @@ Create a new account on [pagekite](https://pagekite.net/) (they have a free tria
 - In the index.js file for AWS lambda, update the constant ``tok`` with a unique secret token.
 - In the project, rename server_config.json_template to server_config.json (located in assets/config) and assign the values ``tunnel``, ``port`` and ``token`` to the your new pagekite server, pagekite port and secret token created in the previous step, respectively.
 
+## Database details
+TODO: specify what is being stored in the local DB.
 
 ## Installation and usage
 
