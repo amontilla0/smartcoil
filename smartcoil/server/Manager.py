@@ -289,6 +289,15 @@ class ServerManager():
         return (True, req_data, None)
 
     def message_smartcoil(self, action, params = {}):
+        '''Sends a message to the SmartCoil class through the outbound queue
+        with a specific action to execute.
+
+        Args:
+            action (:obj:`str`): An action to be parsed by the main class.
+            params (:obj:`dict`): A dictionary of parameters to be used by the
+                main class.
+
+        '''
         self.outbound_queue.put(utils.Message('SRVMSG', action, params))
 
     def debug(self, dbg_msg):
