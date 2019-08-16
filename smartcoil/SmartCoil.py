@@ -166,6 +166,18 @@ class SmartCoil():
         self.commit_to_db(sql, data)
 
     def commit_sensor_data(self, tstamp = None):
+        '''Commits BME680 sensor information to the database, specifically:
+        - timestamp
+        - temperature
+        - pressure
+        - humidity
+        - gas resistance
+        - air quality
+        - whether the smartcoil is running at moment of commit
+        
+        Args:
+            tstamp (int, optional): Timestamp of the entry. If not passed, current time is used.
+        '''
         if tstamp is None:
             tstamp = datetime.now()
 
