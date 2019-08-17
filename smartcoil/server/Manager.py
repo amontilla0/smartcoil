@@ -305,6 +305,14 @@ class ServerManager():
 
     # ENDPOINTS DECLARATION:
     def turn_smartcoil(self):
+        '''Gets and process a request from Amazon Alexa (AWS LAmbda server) to turn on
+        or off the smartcoil.
+        Once the message is successfully parsed, the corresponding action is communicated to the
+        main SmartCoil thread in order to execute it.
+
+        Returns:
+            A response JSON back to the AWS Lambda server to inform if the action executed or not.
+        '''
         try:
             data_is_valid, data, err = self.access_data_is_valid()
             if not data_is_valid:
