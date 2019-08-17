@@ -174,7 +174,7 @@ class SmartCoil():
         - gas resistance
         - air quality
         - whether the smartcoil is running at moment of commit
-        
+
         Args:
             tstamp (int, optional): Timestamp of the entry. If not passed, current time is used.
         '''
@@ -186,6 +186,13 @@ class SmartCoil():
         self.commit_to_db(sql, data)
 
     def commit_user_data(self, tstamp = None):
+        '''Commits user GUI information to the database, specifically:
+        - current target temperature
+        - current fan speed
+
+        Args:
+            tstamp (int, optional): Timestamp of the entry. If not passed, current time is used.
+        '''
         if tstamp is None:
             tstamp = datetime.now()
 
