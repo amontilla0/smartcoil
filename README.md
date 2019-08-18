@@ -50,6 +50,10 @@ Create a new account on [pagekite](https://pagekite.net/) (they have a free tria
 
 ## Database details
 An internal SQLite database is used to store outdoor and indoor status for future data analysis.
+The items stored in the DB are:
+- Temperature, humidity, air pressure, gas resistance and air quality, coming from the BME680 sensor.
+- Current state of the GUI such as target temperature and set fan speed.
+- Latitude, longitude, outdoor temperature, humidity, pressure, forecast condition, wind speed, wind direction and precipitation percentage. All coming from the weather API.
 
 ## Installation and usage
 
