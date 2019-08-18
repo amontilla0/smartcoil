@@ -342,6 +342,14 @@ class ServerManager():
             return '{"error": "invalid information"}'
 
     def set_smartcoil_temperature(self):
+        '''Gets and process a request from Amazon Alexa (AWS LAmbda server) to set the target
+        temperature for the SmartCoil.
+        Once the message is successfully parsed, the corresponding action is communicated to the
+        main SmartCoil thread in order to execute it.
+
+        Returns:
+            A response JSON back to the AWS Lambda server to inform if the action executed or not.
+        '''
         try:
             data_is_valid, data, err = self.access_data_is_valid()
             if not data_is_valid:
