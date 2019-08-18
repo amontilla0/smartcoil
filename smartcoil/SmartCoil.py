@@ -203,6 +203,11 @@ class SmartCoil():
         self.commit_to_db(sql, data)
 
     def sensor_ready(self):
+        '''Checks if the BME680 sensor completed its prime period.
+
+        Returns:
+            bool: Whether the BME680 is ready for accurate readings or not (after priming).
+        '''
         return self.snsr.sensor_ready()
 
     def get_current_temp(self):
