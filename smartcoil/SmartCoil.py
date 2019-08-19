@@ -211,6 +211,12 @@ class SmartCoil():
         return self.snsr.sensor_ready()
 
     def get_current_temp(self):
+        '''Gets the current temperature from the BME680 sensor.
+
+        Returns:
+            float: Temperature reading, default is in Fahrenheit but it could be changed in the
+                corresponding sensor class.
+        '''
         t, *_ = self.snsr.get_most_recent_readings()
         return t
 
