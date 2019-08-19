@@ -221,6 +221,11 @@ class SmartCoil():
         return t
 
     def get_user_screen_data(self):
+        '''Gets the current information from the BME680 sensor that applies for the GUI screen.
+
+        Returns:
+            :obj:`tuple`: Tuple with temperature, humidity and air quality values.
+        '''
         t, p, h, g, a = self.snsr.get_most_recent_readings()
         return (
         '{} °F'.format(round(t))
