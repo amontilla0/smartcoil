@@ -224,7 +224,7 @@ class SmartCoil():
         '''Gets the current information from the BME680 sensor that applies for the GUI screen.
 
         Returns:
-            :obj:`tuple`: Tuple with temperature, humidity and air quality values.
+            :obj:`tuple`: Tuple with indoor temperature, humidity and air quality values.
         '''
         t, p, h, g, a = self.snsr.get_most_recent_readings()
         return (
@@ -234,9 +234,23 @@ class SmartCoil():
         )
 
     def get_weather_screen_data(self):
+        '''Gets the current information from the weather API sensor that applies for the GUI screen.
+
+        Returns:
+            :obj:`tuple`: Tuple with outdoor temperatureand weather forecast icon.
+        '''
         return (self.wthr.temperature, self.wthr.weather_icon)
 
     def monitor_temperature(self, offset = 0):
+        '''This method monitors the indoor status and take actions such as cooling/heating the room
+        until it reaches the target temperature.
+
+        Args:
+            offset (int, optional): A value to add some padding for the target temperature. For
+               example, if set to 3, and the target cooling temperature is 70 it will cool down the
+               indoors until it hits 67. Notice that the offset is sign insensitive, for example
+               both 3 and -3 behave the same way. Defaults to 0.
+        '''
         try:
             # There's an initial offset to reach the target temperature plus some additional degrees.
             # However, once this target is reached, the offset is set to 2 in order to wait some time
@@ -264,19 +278,31 @@ class SmartCoil():
             traceback.print_tb(e.__traceback__)
 
     def update_gui_user_values(self):
+        '''Updates the current indoor temperature, humidity and air quality values in the graphic
+        user interface by getting the information from the sensor object and passing them into the
+        GUI object.
+        '''
         tmp, hum, airq = self.get_user_screen_data()
         self.gui.root.updateCurrentTemp(tmp)
         self.gui.root.updateHumidity(hum)
         self.gui.root.updateAirQuality(airq)
 
     def update_gui_weather_values(self):
+        '''Updates the current outdoor temperature and weather forecast icon in the graphic user
+        interface by getting the information from the weather API object and passing them into the
+        GUI object.
+        '''
         tmp, icon = self.get_weather_screen_data()
         tmp_txt = '{} °F'.format(int(tmp))
         self.gui.root.updateTodayTemp(tmp_txt)
         self.gui.root.updateTodayIcon(icon)
 
     def process_new_sensor_data(self):
-        self.monitor_temperature(offset=3)
+        '''Method used to process indoor readings when the sensor object notifies the main thread
+        new information is available. The specific actions inside the method are to monitor the
+        temperature, update GUI user values, and commit sensor data to the DB.
+        '''
+        self.monitor_temperature(offset=2)
         self.update_gui_user_values()
         self.commit_sensor_data()
 
@@ -286,7 +312,7 @@ class SmartCoil():
 
     def process_new_gui_data(self):
         prev_state = self.fancoil_running
-        self.monitor_temperature(offset=3)
+        self.monitor_temperature(offset=2)
         curr_state = self.fancoil_running
 
         self.commit_user_data()
