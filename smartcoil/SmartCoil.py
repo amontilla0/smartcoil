@@ -307,6 +307,10 @@ class SmartCoil():
         self.commit_sensor_data()
 
     def process_new_weather_data(self):
+        '''Method used to process weather readings when the weather API object notifies the main
+        thread new information is available. The specific actions inside the method are to update
+        GUI weather values and commit weather data to the DB.
+        '''
         self.commit_weather_data()
         self.update_gui_weather_values()
 
