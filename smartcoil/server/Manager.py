@@ -222,7 +222,12 @@ class ServerManager():
         '''
         dirname = os.path.dirname(__file__)
         pagekite_path = os.path.join(dirname, 'pagekite.py')
-        tunnel = subprocess.Popen(['python2', pagekite_path, str(self.tunnel_port), self.tunnel_address], stdout=self.b_logfile, stderr=self.f_logfile)
+        tunnel = subprocess.Popen(
+                    ['python2', pagekite_path, str(self.tunnel_port), self.tunnel_address],
+                    stdout=self.b_logfile,
+                    stderr=self.f_logfile
+                    )
+
         print(tunnel)
 
     def token_is_valid(self, tok):
@@ -414,6 +419,16 @@ class ServerManager():
             return '{"error": "invalid information"}'
 
     def get_smartcoil_state(self):
+        '''Gets and process a request from Amazon Alexa (AWS LAmbda server) to get the SmartCoil
+        state, this is, current indoor temperature, target temperature, if the fancoil is
+        on/off, and fan speed.
+        Once the message is successfully parsed, the corresponding state request is communicated to
+        the main SmartCoil thread and waits for the status in an inbound queue.
+
+        Returns:
+            A response JSON back to the AWS Lambda server to inform about the current state, or an
+                error message if something wrong happened.
+        '''
         try:
             data_is_valid, data, err = self.access_data_is_valid()
             if not data_is_valid:
@@ -477,6 +492,8 @@ class ServerManager():
             return '{"error": "invalid information"}'
 
     def run(self):
+        '''Main method to run both the Flask server as well as the SSH tunnel.
+        '''
         self.run_tunnel()
         serve(self.app, host='0.0.0.0', port=self.tunnel_port)
 
