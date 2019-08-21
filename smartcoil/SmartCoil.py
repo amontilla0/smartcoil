@@ -315,6 +315,11 @@ class SmartCoil():
         self.update_gui_weather_values()
 
     def process_new_gui_data(self):
+        '''Method used to process GUI input when the GUI object notifies the main thread the user
+        made some interaction. The specific actions inside the method are to monitor the temperature
+        given any new input values and commit new GUI data (target temperature and fan speed) to the
+        DB.
+        '''
         prev_state = self.fancoil_running
         self.monitor_temperature(offset=2)
         curr_state = self.fancoil_running
