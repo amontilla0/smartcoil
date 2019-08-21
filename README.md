@@ -67,7 +67,7 @@ python3 tests/main_test.py
 # Additional resources
 To see the SmartCoil in action, please refer to the following video:
 
-[![SmartCoil in action](./assets/md_images/youtube_thumbnail.png)](https://www.youtube.com/watch?v=e4mJBE2wtNs)
+[![SmartCoil in action](./assets/md_images/youtube_thumbnail.png)](https://www.youtube.com/watch?v=cOHOSmqagjc)
 
 ## License
 [MIT](https://choosealicense.com/licenses/mit/)
