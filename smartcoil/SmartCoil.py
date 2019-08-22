@@ -334,7 +334,8 @@ class SmartCoil():
 
     def alexa_switch_smartcoil(self, switch):
         '''Method used to perform the "switch" Amazon Alexa command. The action comes from the Flask
-        server object and is processed by this thread.
+        server object and is processed by this thread, updating both the GUI and the relay module
+        configuration.
 
         Params:
             switch (:obj:`str`): Either 'on' or 'off'. If 'on', the app will look for the last fan
@@ -349,6 +350,13 @@ class SmartCoil():
         self.process_new_gui_data()
 
     def alexa_chg_smartcoil_temperature(self, temperature):
+        '''Method used to perform the "change temperature" Amazon Alexa command. The action comes
+        from the Flask server object and is processed by this thread, updating both the GUI and the
+        relay module configuration.
+
+        Params:
+            switch (int): The new target temperature to set.
+        '''
         self.gui.root.set_user_temp(temperature)
         # take advantage of the GUI processing method, since this case is similar.
         self.process_new_gui_data()
