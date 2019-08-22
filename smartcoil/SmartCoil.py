@@ -333,6 +333,13 @@ class SmartCoil():
             self.commit_sensor_data()
 
     def alexa_switch_smartcoil(self, switch):
+        '''Method used to perform the "switch" Amazon Alexa command. The action comes from the Flask
+        server object and is processed by this thread.
+
+        Params:
+            switch (:obj:`str`): Either 'on' or 'off'. If 'on', the app will look for the last fan
+                speed used to turn the SmartCoil with that same setup.
+        '''
         speed = 0
         if switch == 'on':
             speed = self.gui.root.get_last_speed_seen()
