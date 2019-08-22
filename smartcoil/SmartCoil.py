@@ -355,13 +355,20 @@ class SmartCoil():
         relay module configuration.
 
         Params:
-            switch (int): The new target temperature to set.
+            temperature (int): The new target temperature to set.
         '''
         self.gui.root.set_user_temp(temperature)
         # take advantage of the GUI processing method, since this case is similar.
         self.process_new_gui_data()
 
     def alexa_chg_smartcoil_speed(self, speed):
+        '''Method used to perform the "change fan speed" Amazon Alexa command. The action comes
+        from the Flask server object and is processed by this thread, updating both the GUI and the
+        relay module configuration.
+
+        Params:
+            speed (int): The new fan speed to set.
+        '''
         self.gui.root.set_user_speed(speed)
         # take advantage of the GUI processing method, since this case is similar.
         self.process_new_gui_data()
