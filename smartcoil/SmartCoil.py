@@ -388,6 +388,18 @@ class SmartCoil():
 
 
     def process_new_alexa_data(self, action, params):
+        '''Helper method that acts as a swtch case clause. It determines which method to run based
+        on a given action.
+
+        Params:
+            action (:obj:`str`): A string specifying the action to run:
+                - 'SCOIL_SWTCH' for self.alexa_switch_smartcoil
+                - 'SCOIL_TEMP' for self.alexa_chg_smartcoil_temperature
+                - 'SCOIL_SPEED' for self.alexa_chg_smartcoil_speed
+                - 'SCOIL_STATE' for self.alexa_get_smartcoil_state
+            params (:obj:`dict`): Dictionary of parameters to be used by the method of the
+                corresponding action.
+        '''
         switcher = {
                     'SCOIL_SWTCH': lambda switch: self.alexa_switch_smartcoil(switch),
                     'SCOIL_TEMP': lambda temp: self.alexa_chg_smartcoil_temperature(temp),
@@ -399,6 +411,13 @@ class SmartCoil():
         method(params.get('value', None))
 
     def quit(self, signo, _frame):
+        '''Cleanup method used when interrupting the app.
+
+        Params:
+            signo (int): Type of interrupt signal.
+            _frame (:obj:`obj`): Current stack frame.
+        '''
+
         print('cleaning up before exiting app...')
         self.exit.set()
         self.rc.cleanup()
