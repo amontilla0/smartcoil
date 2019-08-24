@@ -374,6 +374,11 @@ class SmartCoil():
         self.process_new_gui_data()
 
     def alexa_get_smartcoil_state(self):
+        '''Method used to perform the "get state" Amazon Alexa command. The action comes
+        from the Flask server object and is processed by this thread, sending back the state of
+        the app regarding target temperature, current temperature, weather the SmartCoil is turned
+        on or off, and the fan speed.
+        '''
         state = 'OFF' if self.gui.root.user_turned_off_fancoil() else self.mode
         speed = self.gui.root.get_last_speed_seen()
         cur_temp = round(self.get_current_temp())
