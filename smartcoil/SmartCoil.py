@@ -427,6 +427,9 @@ class SmartCoil():
         exit(0)
 
     def run_msg_handler(self):
+        '''Method used by the thread that will handle incoming messages from other objects such as
+        the BME680 sensor, GUI, weather API, or the Flask server.
+        '''
         try:
             switcher = {
                         'SNSMSG': lambda x, y: self.process_new_sensor_data(),
@@ -454,12 +457,15 @@ class SmartCoil():
 
 
     def run_msg_handler_thread(self):
+        '''Method that starts the thread that will handle incoming messages from other objects.
+        '''
         th = Thread(target=self.run_msg_handler, name='msghandler')
         th.start()
 
-    # This method checks for a previous configuration made by the user to restore such state.
-    # It is run as a thread and waits for the GUI to be initialized before making adjustments.
     def fetch_gui_data_init(self):
+        '''This method checks for a previous configuration made by the user to restore such state.
+        It's run as a thread and waits for the GUI to be initialized before making adjustments.
+        '''
         try:
             while self.gui.root is None:
                 sleep(0.05)
@@ -489,10 +495,14 @@ class SmartCoil():
 
 
     def run_fetch_gui_data_init_thread(self):
+        '''Method that starts the thread that will handle GUI state initialization.
+        '''
         th = Thread(target=self.fetch_gui_data_init, name='usrdatainit')
         th.start()
 
     def run(self):
+        '''Main method for the class in charge of running all relevant threads for the app to start.
+        '''
         try:
             # handling CTRL-C internally to stop all related threads and cleanup before exiting
             for sig in ('TERM', 'HUP', 'INT'):
