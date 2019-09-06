@@ -69,5 +69,7 @@ To see the SmartCoil in action, please refer to the following video:
 
 [![SmartCoil in action](./assets/md_images/youtube_thumbnail.png)](https://www.youtube.com/watch?v=cOHOSmqagjc)
 
+You could also read this [article](https://medium.com/voice-tech-podcast/making-a-smart-thermostat-for-an-old-fan-coil-unit-fcu-36c078e2d544) for more details on how I built this project at home.
+
 ## License
 [MIT](https://choosealicense.com/licenses/mit/)
