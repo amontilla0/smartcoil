@@ -8,7 +8,7 @@ idna==2.7
 Kivy==1.11.0.dev0
 Kivy-Garden==0.1.4
 pygame==1.9.4
-Pygments==2.2.0
+Pygments==2.7.4
 python-yr==1.4.5
 requests==2.20.0
 RPi.GPIO==0.6.3
