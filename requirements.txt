@@ -1,5 +1,5 @@
 bme680==1.0.5
-certifi==2018.8.24
+certifi==2022.12.7
 chardet==3.0.4
 colour==0.1.5
 Cython==0.28.5
